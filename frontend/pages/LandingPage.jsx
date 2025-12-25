@@ -197,7 +197,7 @@ export default function IndraLanding() {
 
 function HeroSection({ scrollToSection }) {
   return (
-    <section className="bg-gradient-to-b from-blue-50 to-white py-24 relative">
+    <section className="bg-linear-to-b from-blue-50 to-white py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-4 shadow">
@@ -214,12 +214,12 @@ function HeroSection({ scrollToSection }) {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/auth/citizen">
-              <button className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 text-base font-semibold rounded-lg hover:shadow-md transition-transform">
+              <button className="w-full sm:w-auto bg-linear-to-r from-green-500 to-green-600 text-white px-6 py-3 text-base font-semibold rounded-lg hover:shadow-md transition-transform">
                 Report Incident
               </button>
             </Link>
             <Link to="/auth/operator">
-              <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 text-base font-semibold rounded-lg hover:shadow-md transition-transform">
+              <button className="w-full sm:w-auto bg-linear-to-r from-blue-600 to-blue-700 text-white px-6 py-3 text-base font-semibold rounded-lg hover:shadow-md transition-transform">
                 Command Center
               </button>
             </Link>
@@ -367,12 +367,12 @@ function HowItWorksSection() {
             <div key={i} className="relative">
               {/* Timeline line */}
               {i < steps.length - 1 && (
-                <div className="absolute left-6 top-20 w-1 h-16 bg-gradient-to-b from-blue-500 to-transparent hidden md:block"></div>
+                <div className="absolute left-6 top-20 w-1 h-16 bg-linear-to-b from-blue-500 to-transparent hidden md:block"></div>
               )}
               
               <div className="flex gap-6 items-start group hover:translate-x-2 transition-transform bg-white p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-xl">
                 {/* Step number */}
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform shadow-lg">
+                <div className="shrink-0 w-12 h-12 bg-linear-to-br from-blue-500 to-blue-700 text-white rounded-full flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform shadow-lg">
                   {i + 1}
                 </div>
                 
@@ -401,7 +401,7 @@ function StakeholdersSection() {
   ];
 
   return (
-    <section ref={ref} className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <section ref={ref} className="py-20 bg-linear-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`max-w-3xl mx-auto text-center mb-16 transition-all duration-700 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -414,10 +414,10 @@ function StakeholdersSection() {
           {stakeholders.map((sh, i) => (
             <div key={i} className="bg-white rounded-2xl border border-gray-200 p-8 hover:shadow-2xl hover:scale-105 transition-all group relative overflow-hidden">
               {/* Gradient accent */}
-              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${sh.color} rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all`}></div>
+              <div className={`absolute top-0 right-0 w-24 h-24 bg-linear-to-br ${sh.color} rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-all`}></div>
               
               {/* Icon */}
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${sh.color} text-white mb-4 shadow-lg`}>
+              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-linear-to-br ${sh.color} text-white mb-4 shadow-lg`}>
                 <sh.icon className="w-6 h-6" />
               </div>
               
@@ -426,7 +426,7 @@ function StakeholdersSection() {
               <ul className="space-y-3 text-sm text-gray-700 relative z-10">
                 {sh.items.map((item, j) => (
                   <li key={j} className="flex items-start gap-3">
-                    <span className={`inline-block w-2 h-2 rounded-full bg-gradient-to-br ${sh.color} mt-2 flex-shrink-0`}></span>
+                    <span className={`inline-block w-2 h-2 rounded-full bg-linear-to-br ${sh.color} mt-2 shrink-0`}></span>
                     {item}
                   </li>
                 ))}
@@ -465,10 +465,10 @@ function FeaturesSection() {
           {features.map((feat, i) => (
             <div key={i} className="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-2xl hover:scale-105 transition-all group relative overflow-hidden">
               {/* Gradient background */}
-              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feat.color} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-all`}></div>
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-br ${feat.color} rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-all`}></div>
               
               {/* Icon */}
-              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${feat.color} text-white mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
+              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-linear-to-br ${feat.color} text-white mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
                 <feat.icon className="w-7 h-7" />
               </div>
               
@@ -477,7 +477,7 @@ function FeaturesSection() {
               <ul className="space-y-3 text-gray-700">
                 {feat.items.map((item, j) => (
                   <li key={j} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                     <span className="font-medium">{item}</span>
                   </li>
                 ))}
