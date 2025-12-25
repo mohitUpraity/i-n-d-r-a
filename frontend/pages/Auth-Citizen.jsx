@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { signInWithGoogle, signInWithEmail, createUserWithEmail } from '../lib/auth';
+import { ensureUserProfile } from '../lib/userProfile';
+import { auth } from '../lib/firebase';
 
 export default function AuthCitizen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -40,30 +43,68 @@ export default function AuthCitizen() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
     const newErrors = isLogin ? validateLogin() : validateSignup();
-    
+
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
+      try {
+        if (isLogin) {
+          const res = await signInWithEmail(formData.email, formData.password);
+          const user = res.user;
+          await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
+          navigate('/citizen/home');
+        } else {
+          const res = await createUserWithEmail(formData.email, formData.password);
+          const user = res.user;
+          await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
+          navigate('/citizen/home');
+        }
+      } catch (err) {
+        console.error(err);
+        setErrors({ general: err.message || 'Authentication error' });
+      } finally {
         setLoading(false);
-        alert(`${isLogin ? 'Login' : 'Signup'} successful!`);
-        // Reset form
-        setFormData({ email: '', password: '', confirmPassword: '', fullName: '' });
-      }, 1500);
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
-  const handleGoogleAuth = () => {
-    alert('Google authentication coming soon!');
+  const handleGoogleAuth = async () => {
+    if (loading) return;
+    setLoading(true);
+    setErrors({});
+
+    try {
+      let user;
+
+      // If already signed in, reuse the current user
+      if (auth.currentUser) {
+        user = auth.currentUser;
+      } else {
+        const res = await signInWithGoogle();
+        user = res?.user;
+        if (!user) throw new Error('No user returned from Google sign-in');
+      }
+
+      await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
+      navigate('/citizen/home');
+    } catch (err) {
+      console.error(err);
+      const msg = err?.code === 'auth/popup-blocked' ? 'Popup blocked. Allow popups for this site.' : (err.message || 'Google sign-in failed');
+      setErrors({ general: msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50 to-blue-50 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute top-20 right-10 w-72 h-72 bg-green-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
       <div className="absolute bottom-10 left-10 w-72 h-72 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
       
@@ -202,11 +243,18 @@ export default function AuthCitizen() {
               </div>
             )}
 
+            {errors.general && (
+              <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.general}
+              </p>
+            )}
+
             {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 hover:scale-105"
+              className="w-full bg-linear-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 hover:scale-105"
             >
               {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
             </button>
@@ -226,10 +274,11 @@ export default function AuthCitizen() {
           <button
             type="button"
             onClick={handleGoogleAuth}
-            className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 hover:shadow-md transition-all"
+            disabled={loading}
+            className={`w-full flex items-center justify-center gap-2 border-2 border-gray-200 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 hover:shadow-md transition-all ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Chrome className="w-5 h-5" />
-            Google
+            {loading ? 'Working...' : 'Google'}
           </button>
 
           {/* Toggle Login/Signup */}

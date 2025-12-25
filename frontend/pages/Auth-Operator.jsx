@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle, Building2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { signInWithEmail, createUserWithEmail } from '../lib/auth';
+import { ensureUserProfile } from '../lib/userProfile';
 
 export default function AuthOperator() {
   const [isLogin, setIsLogin] = useState(true);
@@ -44,28 +46,43 @@ export default function AuthOperator() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
     const newErrors = isLogin ? validateLogin() : validateSignup();
-    
+
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
-      setTimeout(() => {
+      try {
+        if (isLogin) {
+          const res = await signInWithEmail(formData.email, formData.password);
+          const user = res.user;
+          await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          navigate('/operator/dashboard');
+        } else {
+          const res = await createUserWithEmail(formData.email, formData.password);
+          const user = res.user;
+          await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          navigate('/operator/dashboard');
+        }
+      } catch (err) {
+        console.error(err);
+        setErrors({ general: err.message || 'Authentication error' });
+      } finally {
         setLoading(false);
-        alert(`${isLogin ? 'Login' : 'Signup'} successful!`);
-        setFormData({ email: '', password: '', confirmPassword: '', fullName: '', organization: '', designation: '' });
-      }, 1500);
+      }
     } else {
       setErrors(newErrors);
     }
+
   };
 
-  const handleGoogleAuth = () => {
-    alert('Google authentication coming soon!');
-  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-blue-100 to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute top-20 right-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
       <div className="absolute bottom-10 left-10 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
       
@@ -261,11 +278,19 @@ export default function AuthOperator() {
               </div>
             )}
 
+            {errors.general && (
+              <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                {errors.general}
+              </p>
+            )}
+
             {/* Submit Button */}
             <button
+            onClick={handleSubmit}
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-900 to-blue-800 text-white font-bold py-3 rounded-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 hover:scale-105"
+              className="w-full bg-linear-to-r from-blue-900 to-blue-800 text-white font-bold py-3 rounded-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 hover:scale-105"
             >
               {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
             </button>
