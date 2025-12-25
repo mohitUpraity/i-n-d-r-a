@@ -1,12 +1,14 @@
 import {BrowserRouter as Router , Routes , Route , Link} from 'react-router-dom';
-import Auth from '../pages/Auth';
-import LandingPage from '../pages/LandingPage';
+import AuthCitizen from '../pages/Auth-Citizen';
+import AuthOperator from '../pages/Auth-Operator';
+import IndraLanding from '../pages/LandingPage';
 const App = () => {
   return (
 <Router>
   <Routes>
-    <Route path='/' element = {<LandingPage/>} />
-    <Route path='/auth' element = {<Auth/>} />
+    <Route path='/' element = {<IndraLanding/>} />
+    <Route path='/auth/citizen' element = {<AuthCitizen/>} />
+    <Route path='/auth/operator' element = {<AuthOperator/>} />
   </Routes>
 </Router>
   )
