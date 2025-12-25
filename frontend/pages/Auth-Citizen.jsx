@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithGoogleWithFallback, signInWithEmail, createUserWithEmail, signInWithGoogleRedirect, initAuthPersistence } from '../lib/auth';
+import { signInWithGoogleWithFallback, signInWithEmail, createUserWithEmail, initAuthPersistence } from '../lib/auth';
 import { ensureUserProfile } from '../lib/userProfile';
 import { auth } from '../lib/firebase';
-import { getRedirectResult } from 'firebase/auth';
 
 export default function AuthCitizen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -46,36 +45,14 @@ export default function AuthCitizen() {
 
   const navigate = useNavigate();
 
-  // Handle redirect result (for signInWithRedirect fallback) and auth state
+  // Listen for auth state changes (popup-only sign-in)
   const loginHandledRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
     (async () => {
-      try {
-        // Check redirect result first (if a redirect was used)
-        const result = await getRedirectResult(auth);
-        if (!mounted) return;
-        if (result && result.user && !loginHandledRef.current) {
-          loginHandledRef.current = true;
-          const user = result.user;
-          console.log('Got redirect result user:', user.uid, user.email);
-          const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
-          if (!profileRes?.success) {
-            console.error('Failed to write profile after redirect sign-in', profileRes?.error);
-            setErrors({ general: 'Signed in but failed to create user profile. Please contact support.' });
-            return;
-          }
-          navigate('/citizen/home');
-          return;
-        }
-      } catch (err) {
-        // Not critical if no redirect result exists
-        console.warn('Redirect result check:', err?.code || err?.message);
-      }
-
-      // Fallback: listen for auth state changes in case the user signed in by other means
+      // Listen for auth state changes (we no longer use redirect-based sign-in)
       const { onAuthStateChanged } = await import('firebase/auth');
       const unsubscribe = onAuthStateChanged(auth, async (u) => {
         if (u && !loginHandledRef.current && window.location.pathname === '/auth/citizen') {
@@ -192,7 +169,7 @@ export default function AuthCitizen() {
       console.error('Google sign-in error:', err?.code || err?.message || err);
       // Release claim to allow retry attempts
       loginHandledRef.current = false;
-      const msg = ['auth/popup-blocked', 'auth/popup-timeout'].includes(err?.code) ? 'Popup blocked or timed out. Redirect flow may be used.' : (err.message || 'Google sign-in failed');
+      const msg = ['auth/popup-blocked', 'auth/popup-timeout', 'auth/popup-blocked-no-redirect'].includes(err?.code) ? 'Popup blocked or timed out. Please allow popups and try again.' : (err.message || 'Google sign-in failed');
       setErrors({ general: msg });
     } finally {
       setLoading(false);
@@ -377,16 +354,7 @@ export default function AuthCitizen() {
             <Chrome className="w-5 h-5" />
             {loading ? 'Working...' : 'Google'}
           </button>
-          <div className="text-center mt-2">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={async () => { setLoading(true); try { await signInWithGoogleRedirect(); } catch (err) { setErrors({ general: err.message || 'Redirect failed' }); setLoading(false); } }}
-              className="text-sm text-gray-600 hover:underline"
-            >
-              Use redirect sign-in if popup does not open
-            </button>
-          </div>
+          <div className="text-center mt-2 text-sm text-gray-500">If the Google popup is blocked, please allow popups in your browser and try again.</div>
 
           {/* Toggle Login/Signup */}
           <div className="text-center mt-6 text-gray-600">

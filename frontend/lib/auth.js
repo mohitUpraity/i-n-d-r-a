@@ -6,7 +6,7 @@ import {
   signOut,
   setPersistence,
   browserLocalPersistence,
-  signInWithRedirect
+  
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -24,10 +24,7 @@ export const signInWithGoogle = async () => {
   return signInWithPopup(auth, provider);
 };
 
-export const signInWithGoogleRedirect = async () => {
-  console.log('Initiating redirect sign-in (this will navigate away)');
-  return signInWithRedirect(auth, provider);
-};
+
 
 export const signInWithGoogleWithFallback = async (timeoutMs = 5000) => {
   await initAuthPersistence();
@@ -42,12 +39,13 @@ export const signInWithGoogleWithFallback = async (timeoutMs = 5000) => {
     const code = err?.code || '';
     console.warn('Popup sign-in failed or timed out:', code || err?.message || err);
 
-    // Only fallback to redirect for popup blocked / timeout / unauthorized-domain / operation-not-allowed
+    // We no longer fallback to redirect; surface a clear error so the UI can instruct users to allow popups.
     const fallbackCodes = ['auth/popup-blocked', 'auth/popup-timeout', 'auth/unauthorized-domain', 'auth/operation-not-allowed'];
     if (fallbackCodes.includes(code)) {
-      console.warn('Falling back to redirect sign-in due to:', code);
-      await signInWithGoogleRedirect();
-      return null;
+      console.warn('Popup sign-in failed; redirect fallback is disabled.');
+      const e = new Error('Popup blocked or timed out and redirect fallback is disabled');
+      e.code = code || 'auth/popup-blocked-no-redirect';
+      throw e;
     }
 
     // For user-closed popup or cancelled popup, propagate the error so UI can show the message and not redirect

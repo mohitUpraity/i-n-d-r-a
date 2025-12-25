@@ -182,7 +182,7 @@ This submission emphasizes:
 ## Authentication notes (Round 1)
 
 - Auth persistence: the frontend sets Firebase `browserLocalPersistence`, so users remain signed in on the same browser across sessions until they explicitly sign out.
-- Google sign-in: the UI prefers `signInWithPopup`. If the browser blocks popups (due to COOP or other policies), the app falls back to `signInWithRedirect`. A manual fallback link is available on the auth page for environments that consistently block popups.
+- Google sign-in: the UI uses `signInWithPopup`. Redirect-based sign-in has been removed to avoid duplicate or ambiguous flows; if your browser blocks popups, please allow popups and retry the sign-in.
 - Cross-device persistence: users must sign in on each device/browser. Silent cross-device sign-in requires SSO or server session cookies (out of scope for Round 1).
 
 **Quick debug tips for deployed site:**
