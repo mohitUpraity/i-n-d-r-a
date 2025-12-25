@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithGoogle, signInWithEmail, createUserWithEmail } from '../lib/auth';
+import { signInWithGoogleWithFallback, signInWithEmail, createUserWithEmail, signInWithGoogleRedirect, initAuthPersistence } from '../lib/auth';
 import { ensureUserProfile } from '../lib/userProfile';
 import { auth } from '../lib/firebase';
+import { getRedirectResult } from 'firebase/auth';
 
 export default function AuthCitizen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -44,6 +45,49 @@ export default function AuthCitizen() {
   };
 
   const navigate = useNavigate();
+
+  // Handle redirect result (for signInWithRedirect fallback) and auth state
+  const loginHandledRef = useRef(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        // Check redirect result first (if a redirect was used)
+        const result = await getRedirectResult(auth);
+        if (!mounted) return;
+        if (result && result.user && !loginHandledRef.current) {
+          loginHandledRef.current = true;
+          const user = result.user;
+          await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
+          navigate('/citizen/home');
+          return;
+        }
+      } catch (err) {
+        // Not critical if no redirect result exists
+        console.warn('Redirect result check:', err?.code || err?.message);
+      }
+
+      // Fallback: listen for auth state changes in case the user signed in by other means
+      const { onAuthStateChanged } = await import('firebase/auth');
+      const unsubscribe = onAuthStateChanged(auth, async (u) => {
+        if (u && !loginHandledRef.current && window.location.pathname === '/auth/citizen') {
+          loginHandledRef.current = true;
+          try {
+            await ensureUserProfile(u, { userType: 'citizen', fullName: u.displayName || '' });
+            navigate('/citizen/home');
+          } catch (err) {
+            console.error('Error ensuring profile after auth state change', err);
+          }
+        }
+      });
+
+      return () => unsubscribe();
+    })();
+
+    return () => { mounted = false; };
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,7 +131,12 @@ export default function AuthCitizen() {
       if (auth.currentUser) {
         user = auth.currentUser;
       } else {
-        const res = await signInWithGoogle();
+        const res = await signInWithGoogleWithFallback(6000);
+        // If fallback used redirect, function returns null and the page will navigate away
+        if (res === null) {
+          // redirect initiated; stop further handling
+          return;
+        }
         user = res?.user;
         if (!user) throw new Error('No user returned from Google sign-in');
       }
@@ -96,7 +145,7 @@ export default function AuthCitizen() {
       navigate('/citizen/home');
     } catch (err) {
       console.error(err);
-      const msg = err?.code === 'auth/popup-blocked' ? 'Popup blocked. Allow popups for this site.' : (err.message || 'Google sign-in failed');
+      const msg = err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-timeout' ? 'Popup blocked or timed out. Redirect flow may be used.' : (err.message || 'Google sign-in failed');
       setErrors({ general: msg });
     } finally {
       setLoading(false);
@@ -280,6 +329,16 @@ export default function AuthCitizen() {
             <Chrome className="w-5 h-5" />
             {loading ? 'Working...' : 'Google'}
           </button>
+          <div className="text-center mt-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => { setLoading(true); try { await signInWithGoogleRedirect(); } catch (err) { setErrors({ general: err.message || 'Redirect failed' }); setLoading(false); } }}
+              className="text-sm text-gray-600 hover:underline"
+            >
+              Use redirect sign-in if popup does not open
+            </button>
+          </div>
 
           {/* Toggle Login/Signup */}
           <div className="text-center mt-6 text-gray-600">
