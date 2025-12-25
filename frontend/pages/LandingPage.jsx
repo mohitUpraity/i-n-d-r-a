@@ -104,10 +104,18 @@ export default function IndraLanding() {
                   {item.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                 </button>
               ))}
-               <Link to="/auth">
-               <button className="w-full bg-blue-900 text-white px-4 py-2 font-medium rounded hover:bg-blue-800 transition-colors">
-                Access Platform
-              </button> </Link>
+              <div className="flex gap-2">
+                <Link to="/auth/citizen" className="flex-1">
+                  <button className="w-full bg-green-600 text-white px-4 py-2 font-medium rounded hover:bg-green-700 transition-colors">
+                    Citizen
+                  </button>
+                </Link>
+                <Link to="/auth/operator" className="flex-1">
+                  <button className="w-full border-2 border-gray-300 text-gray-900 px-4 py-2 font-medium rounded hover:bg-gray-50 transition-colors">
+                    Operator
+                  </button>
+                </Link>
+              </div>
             </div>
           </div>
         )}
@@ -141,9 +149,46 @@ export default function IndraLanding() {
       <CTASection scrollToSection={scrollToSection} />
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-gray-400 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-          <p>© 2024 INDRA Platform. Built for public purpose technology and disaster resilience.</p>
+      <footer className="bg-slate-50 text-gray-700 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-8 items-start">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-900 rounded-lg">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold">INDRA</div>
+                  <div className="text-sm text-gray-500">Disaster Management Platform</div>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">Real-time incident reporting and coordinated response for Himalayan regions.</p>
+            </div>
+
+            <div className="md:col-span-1">
+              <h4 className="font-semibold mb-2">Quick Links</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link to="/" className="hover:underline">Home</Link></li>
+                <li><a href="#features" className="hover:underline">Features</a></li>
+                <li><a href="#how-it-works" className="hover:underline">How It Works</a></li>
+                <li><Link to="/auth/citizen" className="hover:underline">Citizen Portal</Link></li>
+              </ul>
+            </div>
+
+            <div className="md:col-span-1">
+              <h4 className="font-semibold mb-2">Contact</h4>
+              <p className="text-sm text-gray-600">support@indra.example (placeholder)</p>
+              <p className="text-sm text-gray-600 mt-2">Govt. of Uttarakhand & HP initiative</p>
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-gray-200 pt-6 text-sm text-gray-500 flex flex-col md:flex-row md:justify-between gap-4">
+            <div>© 2024 INDRA Platform. All rights reserved.</div>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:underline">Privacy</a>
+              <a href="#" className="hover:underline">Terms</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
@@ -152,38 +197,35 @@ export default function IndraLanding() {
 
 function HeroSection({ scrollToSection }) {
   return (
-    <section className="bg-gradient-to-b from-slate-900 via-blue-900 to-blue-50 py-32 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      
+    <section className="bg-gradient-to-b from-blue-50 to-white py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-900 rounded-2xl mb-6 shadow-2xl">
-            <Shield className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-4 shadow">
+            <Shield className="w-10 h-10 text-blue-900" />
           </div>
-          <h1 className="text-6xl lg:text-7xl font-black text-white mb-6 leading-tight drop-shadow-lg">INDRA</h1>
-          <p className="text-3xl text-blue-200 font-bold mb-6">
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-3 leading-tight">
+            INDRA
+          </h1>
+          <p className="text-2xl text-gray-700 font-semibold mb-4">
             Intelligent National Disaster, Resource & Action Platform
           </p>
-          <p className="text-xl text-blue-100 mb-10 leading-relaxed max-w-2xl mx-auto">
-            Real-time incident reporting, AI-powered risk assessment, and coordinated disaster response. Securing Himalayan communities with modern technology.
+          <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto">
+            Real-time incident reporting, risk assessment, and coordinated response to keep Himalayan communities safer.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link to="/auth/citizen">
-              <button className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 text-lg font-bold hover:shadow-2xl transition-all hover:scale-105 rounded-lg group shadow-lg">
+              <button className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 text-base font-semibold rounded-lg hover:shadow-md transition-transform">
                 Report Incident
-                <ChevronRight className="inline-block ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </button>
             </Link>
             <Link to="/auth/operator">
-              <button className="w-full sm:w-auto bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-8 py-4 text-lg font-bold hover:shadow-2xl transition-all hover:scale-105 rounded-lg group shadow-lg">
+              <button className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 text-base font-semibold rounded-lg hover:shadow-md transition-transform">
                 Command Center
-                <ChevronRight className="inline-block ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
               </button>
             </Link>
             <button 
               onClick={() => scrollToSection('how-it-works')}
-              className="w-full sm:w-auto border-2 border-white text-white px-8 py-4 text-lg font-bold hover:bg-white hover:text-blue-900 transition-all rounded-lg hover:shadow-lg"
+              className="w-full sm:w-auto bg-white border border-gray-200 text-gray-800 px-6 py-3 text-base font-semibold rounded-lg hover:shadow hover:bg-gray-50 transition-all"
             >
               Learn More
             </button>
@@ -520,29 +562,29 @@ function ScopeSection() {
 
 function CTASection({ scrollToSection }) {
   return (
-    <section className="py-20 bg-gray-900 text-white">
+    <section className="py-20 bg-white text-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-4xl font-bold mb-4">Access INDRA</h2>
-        <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
-          Choose your interface based on your role
+        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+          Choose the interface that matches your role — Citizen or Operator
         </p>
-        
+
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-          <button className="w-full sm:w-auto bg-white text-gray-900 px-8 py-4 text-lg font-medium hover:bg-gray-100 transition-colors">
-            Citizen Interface
-          </button>
-          <button className="w-full sm:w-auto border-2 border-white text-white px-8 py-4 text-lg font-medium hover:bg-white hover:text-gray-900 transition-colors">
-            Authority Dashboard
-          </button>
-          <button className="w-full sm:w-auto border-2 border-white text-white px-8 py-4 text-lg font-medium hover:bg-white hover:text-gray-900 transition-colors">
+          <a href="/auth/citizen" className="w-full sm:w-auto bg-green-600 text-white px-8 py-4 text-lg font-medium rounded-md hover:bg-green-700 transition-colors">
+            Citizen Portal
+          </a>
+          <a href="/auth/operator" className="w-full sm:w-auto border-2 border-gray-300 text-gray-900 px-8 py-4 text-lg font-medium rounded-md hover:bg-gray-50 transition-colors">
+            Operator Portal
+          </a>
+          <a href="/docs/technical" className="w-full sm:w-auto border-2 border-gray-300 text-gray-900 px-8 py-4 text-lg font-medium rounded-md hover:bg-gray-50 transition-colors">
             Technical Overview
-          </button>
+          </a>
         </div>
 
-        <div className="border-t border-gray-700 pt-8 text-sm text-gray-400 space-y-2">
+        <div className="border-t border-gray-100 pt-8 text-sm text-gray-600 space-y-2">
           <p><strong>For Inquiries:</strong> contact@indra.gov.in</p>
           <p><strong>Developed for:</strong> National Disaster Management Authority | Digital India Initiative</p>
-          <p className="italic">This is a prototype system developed for demonstration and evaluation purposes.</p>
+          <p className="italic">Prototype system for demonstration and evaluation purposes.</p>
         </div>
       </div>
     </section>

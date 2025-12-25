@@ -65,7 +65,7 @@ export default function AuthOperator() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute top-20 right-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
       <div className="absolute bottom-10 left-10 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
       
@@ -77,13 +77,13 @@ export default function AuthOperator() {
               <div className="p-2 bg-blue-900 rounded-lg">
                 <Shield className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-gray-900">INDRA</span>
+              <span className="text-2xl font-bold text-blue-900">INDRA</span>
             </div>
           </Link>
-          <h1 className="text-4xl font-black text-gray-900 mb-2">
+          <h1 className="text-4xl font-black text-blue-900 mb-2">
             {isLogin ? 'Operator Access' : 'Operator Registration'}
           </h1>
-          <p className="text-gray-600 font-medium">
+          <p className="text-gray-700 font-medium">
             {isLogin ? 'Manage disaster response operations' : 'Join the response coordination team'}
           </p>
         </div>
