@@ -59,12 +59,22 @@ export default function AuthOperator() {
         if (isLogin) {
           const res = await signInWithEmail(formData.email, formData.password);
           const user = res.user;
-          await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          const profileRes = await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          if (!profileRes?.success) {
+            console.error('Failed to create/update operator profile after sign-in', profileRes?.error);
+            setErrors({ general: 'Signed in but failed to create your operator profile. Please contact support.' });
+            return;
+          }
           navigate('/operator/dashboard');
         } else {
           const res = await createUserWithEmail(formData.email, formData.password);
           const user = res.user;
-          await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          const profileRes = await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          if (!profileRes?.success) {
+            console.error('Failed to create/update operator profile after account creation', profileRes?.error);
+            setErrors({ general: 'Account created but we could not finish creating your profile. Please contact support.' });
+            return;
+          }
           navigate('/operator/dashboard');
         }
       } catch (err) {

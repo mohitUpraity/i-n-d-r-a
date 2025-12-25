@@ -185,6 +185,12 @@ This submission emphasizes:
 - Google sign-in: the UI prefers `signInWithPopup`. If the browser blocks popups (due to COOP or other policies), the app falls back to `signInWithRedirect`. A manual fallback link is available on the auth page for environments that consistently block popups.
 - Cross-device persistence: users must sign in on each device/browser. Silent cross-device sign-in requires SSO or server session cookies (out of scope for Round 1).
 
+**Quick debug tips for deployed site:**
+
+- If Google sign-in popup closes immediately or does not complete, check **Firebase Console → Authentication → Sign-in method → Authorized domains** and ensure your hosting domain is listed.
+- To quickly verify which Firebase project the deployed frontend is using, add `?debug=auth` to the auth page URL (e.g. `/auth/citizen?debug=auth`). The page will show the `projectId` and whether `auth.currentUser` is present.
+- If profiles are not appearing in Firestore, check **Firestore → Data** and the **Authentication → Users** list to see if sign-ins are creating Auth users but profile writes are failing. If writes are blocked, inspect Firestore rules or Cloud Function permissions.
+
 ---
 
 ## 15. Future Scope (Round 2 Reference)

@@ -60,7 +60,13 @@ export default function AuthCitizen() {
         if (result && result.user && !loginHandledRef.current) {
           loginHandledRef.current = true;
           const user = result.user;
-          await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
+          console.log('Got redirect result user:', user.uid, user.email);
+          const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
+          if (!profileRes?.success) {
+            console.error('Failed to write profile after redirect sign-in', profileRes?.error);
+            setErrors({ general: 'Signed in but failed to create user profile. Please contact support.' });
+            return;
+          }
           navigate('/citizen/home');
           return;
         }
@@ -74,11 +80,18 @@ export default function AuthCitizen() {
       const unsubscribe = onAuthStateChanged(auth, async (u) => {
         if (u && !loginHandledRef.current && window.location.pathname === '/auth/citizen') {
           loginHandledRef.current = true;
+          console.log('onAuthStateChanged fired for user:', u.uid, u.email);
           try {
-            await ensureUserProfile(u, { userType: 'citizen', fullName: u.displayName || '' });
+            const profileRes = await ensureUserProfile(u, { userType: 'citizen', fullName: u.displayName || '' });
+            if (!profileRes?.success) {
+              console.error('Failed to create/update profile after auth change', profileRes?.error);
+              setErrors({ general: 'Signed in but failed to create user profile. Please try again or contact support.' });
+              return;
+            }
             navigate('/citizen/home');
           } catch (err) {
             console.error('Error ensuring profile after auth state change', err);
+            setErrors({ general: 'Error creating user profile.' });
           }
         }
       });
@@ -100,12 +113,22 @@ export default function AuthCitizen() {
         if (isLogin) {
           const res = await signInWithEmail(formData.email, formData.password);
           const user = res.user;
-          await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
+          const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
+          if (!profileRes?.success) {
+            console.error('Failed to create/update profile after email sign-in', profileRes?.error);
+            setErrors({ general: 'Signed in but failed to create user profile. Please contact support.' });
+            return;
+          }
           navigate('/citizen/home');
         } else {
           const res = await createUserWithEmail(formData.email, formData.password);
           const user = res.user;
-          await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
+          const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
+          if (!profileRes?.success) {
+            console.error('Failed to create/update profile after account creation', profileRes?.error);
+            setErrors({ general: 'Account created but failed to create user profile. Please contact support.' });
+            return;
+          }
           navigate('/citizen/home');
         }
       } catch (err) {
@@ -124,31 +147,56 @@ export default function AuthCitizen() {
     setLoading(true);
     setErrors({});
 
+    // Claim handling early to avoid duplicate flows (cleared after timeout or on error)
+    loginHandledRef.current = true;
+    let clearClaimTimer = setTimeout(() => {
+      console.warn('Clearing loginHandledRef due to timeout');
+      loginHandledRef.current = false;
+    }, 15000);
+
     try {
+      console.log('Starting Google sign-in (popup with redirect fallback, 5s timeout)');
       let user;
 
       // If already signed in, reuse the current user
       if (auth.currentUser) {
         user = auth.currentUser;
+        clearTimeout(clearClaimTimer);
       } else {
-        const res = await signInWithGoogleWithFallback(6000);
+        const res = await signInWithGoogleWithFallback(5000);
         // If fallback used redirect, function returns null and the page will navigate away
         if (res === null) {
           // redirect initiated; stop further handling
+          console.log('Redirect flow initiated after popup fallback');
           return;
         }
+        console.log('Popup sign-in result:', res?.user?.uid, res?.user?.email);
         user = res?.user;
         if (!user) throw new Error('No user returned from Google sign-in');
       }
 
-      await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
+      // At this point we have a user; keep claimed state and clear the timer
+      clearTimeout(clearClaimTimer);
+
+      const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
+      if (!profileRes?.success) {
+        console.error('Failed to create/update profile after Google sign-in', profileRes?.error);
+        setErrors({ general: 'Signed in but failed to create user profile. Please contact support.' });
+        // release claim so user can retry
+        loginHandledRef.current = false;
+        return;
+      }
+
       navigate('/citizen/home');
     } catch (err) {
-      console.error(err);
-      const msg = err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-timeout' ? 'Popup blocked or timed out. Redirect flow may be used.' : (err.message || 'Google sign-in failed');
+      console.error('Google sign-in error:', err?.code || err?.message || err);
+      // Release claim to allow retry attempts
+      loginHandledRef.current = false;
+      const msg = ['auth/popup-blocked', 'auth/popup-timeout'].includes(err?.code) ? 'Popup blocked or timed out. Redirect flow may be used.' : (err.message || 'Google sign-in failed');
       setErrors({ general: msg });
     } finally {
       setLoading(false);
+      try { clearTimeout(clearClaimTimer); } catch(e){}
     }
   };
 
@@ -378,6 +426,15 @@ export default function AuthCitizen() {
             ← Back to Home
           </Link>
         </div>
+
+        {/* Optional debug info (enable by adding ?debug=auth to URL) */}
+        {new URLSearchParams(window.location.search).get('debug') === 'auth' && (
+          <div className="mt-4 p-3 bg-gray-50 border rounded text-xs text-gray-700">
+            <div><strong>Firebase Project:</strong> {auth?.app?.options?.projectId || 'unknown'}</div>
+            <div><strong>Auth currentUser:</strong> {auth?.currentUser?.uid ? auth.currentUser.uid : 'none'}</div>
+            <div className="mt-2 text-xxs text-gray-500">Use this for quick verification of the deployed config and auth state.</div>
+          </div>
+        )}
       </div>
     </div>
   );

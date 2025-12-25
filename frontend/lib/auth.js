@@ -25,6 +25,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const signInWithGoogleRedirect = async () => {
+  console.log('Initiating redirect sign-in (this will navigate away)');
   return signInWithRedirect(auth, provider);
 };
 
@@ -38,10 +39,19 @@ export const signInWithGoogleWithFallback = async (timeoutMs = 5000) => {
     const res = await Promise.race([popupPromise, timeout]);
     return res;
   } catch (err) {
-    console.warn('Popup sign-in failed or timed out, falling back to redirect:', err?.code || err?.message || err);
-    // Redirect will navigate away; caller should not expect a return value
-    await signInWithGoogleRedirect();
-    return null;
+    const code = err?.code || '';
+    console.warn('Popup sign-in failed or timed out:', code || err?.message || err);
+
+    // Only fallback to redirect for popup blocked / timeout / unauthorized-domain / operation-not-allowed
+    const fallbackCodes = ['auth/popup-blocked', 'auth/popup-timeout', 'auth/unauthorized-domain', 'auth/operation-not-allowed'];
+    if (fallbackCodes.includes(code)) {
+      console.warn('Falling back to redirect sign-in due to:', code);
+      await signInWithGoogleRedirect();
+      return null;
+    }
+
+    // For user-closed popup or cancelled popup, propagate the error so UI can show the message and not redirect
+    throw err;
   }
 };
 
