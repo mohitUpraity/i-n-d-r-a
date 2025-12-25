@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../lib/firebase';
 import { Navigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
+import Loader from './Loader';
 
 export default function ProtectedRoute({ children, redirectTo = '/auth/citizen', requiredRole = null }) {
   const [loading, setLoading] = useState(true);
@@ -39,12 +40,29 @@ export default function ProtectedRoute({ children, redirectTo = '/auth/citizen',
 
       setUser(u);
 
+      // check token claims as well as Firestore profile for roles
+      let tokenClaims = {};
+      try {
+        const tokenResult = await u.getIdTokenResult();
+        tokenClaims = tokenResult && tokenResult.claims ? tokenResult.claims : {};
+      } catch (err) {
+        console.warn('Failed to read ID token claims', err);
+      }
+
       if (requiredRole) {
         try {
           const ref = doc(db, 'users', u.uid);
           const snap = await getDoc(ref);
           const data = snap.exists() ? snap.data() : null;
-          setAuthorized(data && (data.role === requiredRole || data.userType === requiredRole));
+
+          const hasClaim = tokenClaims[requiredRole] === true || tokenClaims.admin === true;
+          const hasProfileRole = data && (data.role === requiredRole || data.userType === requiredRole);
+
+          // DEV override: allow a specific UID to act as admin during development
+          const DEV_ADMIN_UID = 'REPLACE_WITH_ADMIN_UID';
+          const isDevAdmin = u && u.uid === DEV_ADMIN_UID && requiredRole === 'admin';
+
+          setAuthorized(hasClaim || !!hasProfileRole || isDevAdmin);
         } catch (err) {
           console.warn('ProtectedRoute role check failed', err);
           setAuthorized(false);
@@ -59,7 +77,7 @@ export default function ProtectedRoute({ children, redirectTo = '/auth/citizen',
     return () => { mounted = false; if (graceTimer) clearTimeout(graceTimer); unsub(); };
   }, [requiredRole]);
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) return <div className="p-8 text-center"><Loader /></div>;
   if (!user) return <Navigate to={redirectTo} replace />;
   if (requiredRole && !authorized) return (
     <div className="p-8 text-center">

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmail, createUserWithEmail } from '../lib/auth';
-import { ensureUserProfile } from '../lib/userProfile';
+import { signInWithEmail, createUserWithEmail } from '../../lib/auth';
+import { ensureUserProfile } from '../../lib/userProfile';
 
 export default function AuthOperator() {
   const [isLogin, setIsLogin] = useState(true);

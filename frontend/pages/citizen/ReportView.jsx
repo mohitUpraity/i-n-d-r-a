@@ -1,0 +1,80 @@
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { MapPin, Clock, FileText } from 'lucide-react';
+import Loader from '../../src/components/Loader';
+
+export default function ReportView() {
+  const { id } = useParams();
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    (async () => {
+      try {
+        const ref = doc(db, 'reports', id);
+        const snap = await getDoc(ref);
+        if (snap.exists()) setReport({ id: snap.id, ...snap.data() });
+      } catch (err) {
+        console.error('Could not fetch report', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]);
+
+  const formatDate = (ts) => {
+    try {
+      if (!ts) return '—';
+      if (ts.toDate) return ts.toDate().toLocaleString();
+      return new Date(ts).toLocaleString();
+    } catch (e) {
+      return '—';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <button onClick={() => navigate(-1)} className="text-sm text-gray-700 hover:underline mb-4">← Back</button>
+
+        {loading ? (
+          <div className="p-6 bg-white rounded-lg border text-center"><Loader /></div>
+        ) : !report ? (
+          <div className="p-6 bg-white rounded-lg border text-gray-700">Report not found.</div>
+        ) : (
+          <article className="bg-white p-6 rounded-lg border">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs text-gray-500">{report.type || 'Report'}</div>
+                <h1 className="text-xl font-semibold text-gray-900">{report.title || (report.description ? report.description.slice(0, 80) : 'Report details')}</h1>
+                <div className="text-xs text-gray-500 mt-1">{formatDate(report.createdAt)}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 text-gray-700">
+              <p className="mb-2"><strong>Description:</strong></p>
+              <p className="whitespace-pre-wrap">{report.description || 'No additional details provided.'}</p>
+
+              {report.location && (
+                <div className="mt-4 p-3 bg-gray-50 border rounded flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-gray-600" />
+                  <div>
+                    <div className="text-sm font-medium">Location</div>
+                    <div className="text-xs text-gray-600 font-mono">{report.location.lat}, {report.location.lng}</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 text-sm text-gray-700">Status: {report.status || 'Submitted'}</div>
+            </div>
+          </article>
+        )}
+      </div>
+    </div>
+  );
+}

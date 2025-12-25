@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AuthCitizen from '../pages/Auth-Citizen';
-import AuthOperator from '../pages/Auth-Operator';
+import { Routes, Route } from 'react-router-dom';
+import AuthCitizen from '../pages/citizen/Auth-Citizen';
+import AuthOperator from '../pages/operator/Auth-Operator';
 import IndraLanding from '../pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import CitizenHome from '../pages/CitizenHome';
-import OperatorDashboard from '../pages/OperatorDashboard';
+import CitizenHome from '../pages/citizen/CitizenHome';
+import ReportCreate from '../pages/citizen/Reports';
+import ReportsList from '../pages/citizen/ReportsList';
+import OperatorDashboard from '../pages/operator/OperatorDashboard';
+import ReportView from '../pages/citizen/ReportView';
+import OperatorPending from '../pages/operator/OperatorPending';
+import AdminDashboard from '../pages/admin/AdminDashboard';
 
 const App = () => {
   // ensure auth persistence is configured
@@ -16,7 +21,7 @@ const App = () => {
   }, []);
 
   return (
-    <Router>
+    <>
       <Routes>
         <Route path='/' element={<IndraLanding />} />
         <Route path='/auth/citizen' element={<AuthCitizen />} />
@@ -33,6 +38,33 @@ const App = () => {
         />
 
         <Route
+          path='/report'
+          element={
+            <ProtectedRoute>
+              <ReportCreate />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path='/reports'
+          element={
+            <ProtectedRoute>
+              <ReportsList />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path='/reports/:id'
+          element={
+            <ProtectedRoute>
+              <ReportView />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path='/operator/dashboard'
           element={
             <ProtectedRoute requiredRole="operator">
@@ -40,8 +72,26 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path='/operator/pending'
+          element={
+            <ProtectedRoute requiredRole="operator">
+              <OperatorPending />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path='/admin'
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </Router>
+    </>
   );
 };
 

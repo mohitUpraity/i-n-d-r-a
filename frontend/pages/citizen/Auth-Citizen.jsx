@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithGoogleWithFallback, signInWithEmail, createUserWithEmail, initAuthPersistence } from '../lib/auth';
-import { ensureUserProfile } from '../lib/userProfile';
-import { auth } from '../lib/firebase';
+import { signInWithGoogleWithFallback, signInWithEmail, createUserWithEmail, initAuthPersistence } from '../../lib/auth';
+import { ensureUserProfile } from '../../lib/userProfile';
+import { auth } from '../../lib/firebase';
 
 export default function AuthCitizen() {
   const [isLogin, setIsLogin] = useState(true);

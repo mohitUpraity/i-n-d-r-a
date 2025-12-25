@@ -191,6 +191,18 @@ This submission emphasizes:
 - To quickly verify which Firebase project the deployed frontend is using, add `?debug=auth` to the auth page URL (e.g. `/auth/citizen?debug=auth`). The page will show the `projectId` and whether `auth.currentUser` is present.
 - If profiles are not appearing in Firestore, check **Firestore → Data** and the **Authentication → Users** list to see if sign-ins are creating Auth users but profile writes are failing. If writes are blocked, inspect Firestore rules or Cloud Function permissions.
 
+
+## Admin approvals (Operators)
+
+- Operator signups create a profile with `userType: 'operator'` and `status: 'pending'`.
+- Admins can visit `/admin` to review pending operator requests and click **Approve** / **Reject**.
+- NOTE (development): callable Cloud Functions are temporarily **disabled**. The `/admin` UI now performs direct Firestore updates when the current user matches a development admin UID (see `frontend/lib/config.js`).
+- To enable admin testing locally, edit `frontend/lib/config.js` and set `DEV_HARDCODED_ADMIN_UID` to your UID (found in Firebase Console → Authentication → Users), then sign in as that user and visit `/admin`.
+
+Deployment notes:
+- Deploy Firestore rules: `firebase deploy --only firestore:rules` (uses `frontend/firestore.rules`).
+- (When re-enabling functions) Deploy functions: `cd backend/functions && npm install && firebase deploy --only functions`.
+
 ---
 
 ## 15. Future Scope (Round 2 Reference)
