@@ -11,14 +11,33 @@ export default function ProtectedRoute({ children, redirectTo = '/auth/citizen',
 
   useEffect(() => {
     let mounted = true;
+    // Grace period to avoid flashing the login during quick auth state transitions
+    const GRACE_MS = 700;
+    let graceTimer = null;
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!mounted) return;
-      setUser(u);
+
+      // If user is null, start a short grace period before deciding to redirect
       if (!u) {
+        setUser(null);
         setAuthorized(false);
-        setLoading(false);
+        // keep loading true during grace period to avoid flash
+        if (graceTimer) clearTimeout(graceTimer);
+        graceTimer = setTimeout(() => {
+          // After grace, if still no user, stop loading and allow redirect
+          setLoading(false);
+        }, GRACE_MS);
         return;
       }
+
+      // If we have a user, cancel any grace timers and proceed
+      if (graceTimer) {
+        clearTimeout(graceTimer);
+        graceTimer = null;
+      }
+
+      setUser(u);
 
       if (requiredRole) {
         try {
@@ -37,7 +56,7 @@ export default function ProtectedRoute({ children, redirectTo = '/auth/citizen',
       setLoading(false);
     });
 
-    return () => { mounted = false; unsub(); };
+    return () => { mounted = false; if (graceTimer) clearTimeout(graceTimer); unsub(); };
   }, [requiredRole]);
 
   if (loading) return <div className="p-8 text-center">Loading...</div>;
