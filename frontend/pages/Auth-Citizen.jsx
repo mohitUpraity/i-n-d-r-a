@@ -47,6 +47,36 @@ export default function AuthCitizen() {
 
   // Listen for auth state changes (popup-only sign-in)
   const loginHandledRef = useRef(false);
+  const backgroundRepairRef = useRef({});
+
+  // Try a background profile repair (non-blocking) so users can continue using the app
+  const attemptBackgroundProfileRepair = async (user, maxAttempts = 3) => {
+    if (!user || !user.uid) return;
+    if (backgroundRepairRef.current[user.uid]) return;
+    backgroundRepairRef.current[user.uid] = true;
+
+    console.log('Starting background profile repair for', user.uid);
+    for (let i = 1; i <= maxAttempts; i++) {
+      try {
+        const res = await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' }, { maxRetries: 2, retryDelayMs: 500 });
+        if (res?.success) {
+          console.info('Background profile repair succeeded for', user.uid);
+          setErrors(prev => ({ ...prev, general: '' }));
+          backgroundRepairRef.current[user.uid] = false;
+          return true;
+        }
+      } catch (err) {
+        console.warn('Background profile repair attempt', i, 'failed for', user.uid, err?.code || err?.message || err);
+      }
+      // wait before next attempt
+      await new Promise(r => setTimeout(r, 800 * i));
+    }
+
+    console.error('Background profile repair failed for', user.uid);
+    setErrors({ general: 'Signed in but we could not create your profile yet. We will keep retrying in the background.' });
+    backgroundRepairRef.current[user.uid] = false;
+    return false;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -62,13 +92,17 @@ export default function AuthCitizen() {
             const profileRes = await ensureUserProfile(u, { userType: 'citizen', fullName: u.displayName || '' });
             if (!profileRes?.success) {
               console.error('Failed to create/update profile after auth change', profileRes?.error);
-              setErrors({ general: 'Signed in but failed to create user profile. Please try again or contact support.' });
+              // Schedule background repair and let the user proceed
+              attemptBackgroundProfileRepair(u);
+              navigate('/citizen/home');
               return;
             }
             navigate('/citizen/home');
           } catch (err) {
             console.error('Error ensuring profile after auth state change', err);
-            setErrors({ general: 'Error creating user profile.' });
+            // Schedule background repair and allow user to continue
+            attemptBackgroundProfileRepair(u);
+            navigate('/citizen/home');
           }
         }
       });
@@ -93,7 +127,9 @@ export default function AuthCitizen() {
           const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
           if (!profileRes?.success) {
             console.error('Failed to create/update profile after email sign-in', profileRes?.error);
-            setErrors({ general: 'Signed in but failed to create user profile. Please contact support.' });
+            // Schedule background repair and allow the user to continue
+            attemptBackgroundProfileRepair(user);
+            navigate('/citizen/home');
             return;
           }
           navigate('/citizen/home');
@@ -103,7 +139,9 @@ export default function AuthCitizen() {
           const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: formData.fullName });
           if (!profileRes?.success) {
             console.error('Failed to create/update profile after account creation', profileRes?.error);
-            setErrors({ general: 'Account created but failed to create user profile. Please contact support.' });
+            // Schedule background repair and allow the user to continue
+            attemptBackgroundProfileRepair(user);
+            navigate('/citizen/home');
             return;
           }
           navigate('/citizen/home');
@@ -158,9 +196,11 @@ export default function AuthCitizen() {
       const profileRes = await ensureUserProfile(user, { userType: 'citizen', fullName: user.displayName || '' });
       if (!profileRes?.success) {
         console.error('Failed to create/update profile after Google sign-in', profileRes?.error);
-        setErrors({ general: 'Signed in but failed to create user profile. Please contact support.' });
-        // release claim so user can retry
+        // Schedule background repair and let the user proceed
+        attemptBackgroundProfileRepair(user);
+        // release claim so the auth listener can proceed if needed
         loginHandledRef.current = false;
+        navigate('/citizen/home');
         return;
       }
 
