@@ -60,13 +60,26 @@ export default function CitizenReport() {
     setError('');
 
     try {
+      const user = auth.currentUser;
+      const selectedType = incidentTypes.find((t) => t.value === incidentType);
+      const title = selectedType ? selectedType.label : 'Emergency report';
+      const locationText = `${location.lat}, ${location.lng}`;
+
+      // NOTE: For this prototype, we set the initial status directly from the
+      // client. In production, this write should move to a trusted backend
+      // (Cloud Function) so that status and timestamps cannot be forged by a
+      // malicious client. Keeping this logic small and here makes it easy to
+      // lift-and-shift into Cloud Functions later.
       const payload = {
-        type: incidentType,
+        citizenId: user ? user.uid : null,
+        citizenEmail: user?.email || null,
+        title,
         description: description || '',
-        location: location || null,
-        createdBy: auth?.currentUser?.uid || null,
-        status: 'Submitted',
+        category: incidentType,
+        locationText,
+        status: 'submitted',
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       const ref = await addDoc(collection(db, 'reports'), payload);

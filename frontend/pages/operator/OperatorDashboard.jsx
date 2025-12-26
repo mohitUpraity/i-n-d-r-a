@@ -1,32 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Shield, MapPin, Clock, ChevronDown, Filter, Menu, X, User } from 'lucide-react';
+import { Shield, User } from 'lucide-react';
 import { logOut } from '../../lib/auth';
-import { auth, db } from '../../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from '../../lib/firebase';
+import { subscribeToAllReports, updateReportStatus, getNextStatus } from '../../lib/reports';
 
-export default function CommandDashboard() {
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [selectedSeverity, setSelectedSeverity] = useState('all');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+// Operator dashboard: real-time view of all citizen reports.
+// This intentionally keeps Firestore access simple and declarative so that it
+// can be moved into Cloud Functions later without rewriting the UI.
+export default function OperatorDashboard() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [signOutLoading, setSignOutLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
 
   useEffect(() => {
-    const u = auth.currentUser;
-    setUser(u);
-    if (u) {
-      (async () => {
-        try {
-          const ref = doc(db, 'users', u.uid);
-          const snap = await getDoc(ref);
-          if (snap.exists()) setProfile(snap.data());
-        } catch (err) {
-          console.warn('Could not fetch user profile', err);
-        }
-      })();
-    }
+    // Subscribe to *all* reports. Operators need a full picture to triage and
+    // coordinate the response. Firestore security rules (not query filters)
+    // should ensure that only operator/admin accounts can read this feed.
+    const unsubscribe = subscribeToAllReports(
+      (snap) => {
+        const items = [];
+        snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
+        setReports(items);
+        setLoading(false);
+      },
+      (err) => {
+        console.warn('Failed to subscribe to reports', err);
+        setError('Could not load reports.');
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -40,346 +48,261 @@ export default function CommandDashboard() {
     }
   };
 
-  const regions = [
-    { id: 'all', name: 'All Regions' },
-    { id: 'north', name: 'Northern District' },
-    { id: 'south', name: 'Southern District' },
-    { id: 'east', name: 'Eastern District' },
-    { id: 'west', name: 'Western District' },
-    { id: 'central', name: 'Central District' }
-  ];
-
-  const incidents = [
-    {
-      id: 'INC-2024-1247',
-      type: 'Structural Fire',
-      location: 'Northern District, Zone 4A',
-      region: 'north',
-      severity: 'critical',
-      status: 'active',
-      time: '14 minutes ago',
-      responders: 8
-    },
-    {
-      id: 'INC-2024-1246',
-      type: 'Flooding',
-      location: 'Eastern District, Riverside Area',
-      region: 'east',
-      severity: 'high',
-      status: 'active',
-      time: '32 minutes ago',
-      responders: 12
-    },
-    {
-      id: 'INC-2024-1245',
-      type: 'Road Blockage',
-      location: 'Central District, Highway 7',
-      region: 'central',
-      severity: 'medium',
-      status: 'responding',
-      time: '1 hour ago',
-      responders: 4
-    },
-    {
-      id: 'INC-2024-1244',
-      type: 'Power Outage',
-      location: 'Western District, Sector 9',
-      region: 'west',
-      severity: 'medium',
-      status: 'responding',
-      time: '1 hour ago',
-      responders: 6
-    },
-    {
-      id: 'INC-2024-1243',
-      type: 'Medical Emergency',
-      location: 'Southern District, Commerce St',
-      region: 'south',
-      severity: 'high',
-      status: 'resolved',
-      time: '2 hours ago',
-      responders: 3
-    },
-    {
-      id: 'INC-2024-1242',
-      type: 'Building Damage',
-      location: 'Northern District, Industrial Park',
-      region: 'north',
-      severity: 'low',
-      status: 'resolved',
-      time: '3 hours ago',
-      responders: 5
-    }
-  ];
-
-  const stats = [
-    { label: 'Active Incidents', value: '14', color: 'text-red-600' },
-    { label: 'Responding', value: '23', color: 'text-yellow-600' },
-    { label: 'Resolved Today', value: '47', color: 'text-green-600' },
-    { label: 'Total Responders', value: '156', color: 'text-blue-600' }
-  ];
-
-  const riskZones = [
-    { name: 'Northern District', risk: 'critical', level: 4 },
-    { name: 'Eastern District', risk: 'high', level: 3 },
-    { name: 'Central District', risk: 'medium', level: 2 },
-    { name: 'Western District', risk: 'medium', level: 2 },
-    { name: 'Southern District', risk: 'low', level: 1 }
-  ];
-
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-600 text-white';
-      case 'high': return 'bg-orange-600 text-white';
-      case 'medium': return 'bg-yellow-600 text-white';
-      case 'low': return 'bg-blue-600 text-white';
-      default: return 'bg-gray-600 text-white';
+  const handleAdvanceStatus = async (reportId, currentStatus) => {
+    try {
+      await updateReportStatus(reportId, currentStatus);
+    } catch (err) {
+      console.error('Failed to update status', err);
+      // We keep UX simple here for the hackathon; in production we might show a toast.
     }
   };
 
-  const getStatusColor = (status) => {
+  const formatDate = (ts) => {
+    try {
+      if (!ts) return '—';
+      if (ts.toDate) return ts.toDate().toLocaleString();
+      return new Date(ts).toLocaleString();
+    } catch (e) {
+      return '—';
+    }
+  };
+
+  const statusBadgeClass = (status) => {
     switch (status) {
-      case 'active': return 'text-red-600 bg-red-50 border-red-200';
-      case 'responding': return 'text-yellow-700 bg-yellow-50 border-yellow-200';
-      case 'resolved': return 'text-green-700 bg-green-50 border-green-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'reviewed':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'working':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'resolved':
+        return 'bg-green-50 text-green-700 border-green-200';
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
-  const getRiskColor = (risk) => {
-    switch (risk) {
-      case 'critical': return 'bg-red-600';
-      case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-blue-500';
-      default: return 'bg-gray-400';
-    }
-  };
+  const currentUserEmail = auth.currentUser?.email || '';
 
-  const filteredIncidents = incidents.filter(incident => {
-    const regionMatch = selectedRegion === 'all' || incident.region === selectedRegion;
-    const severityMatch = selectedSeverity === 'all' || incident.severity === selectedSeverity;
-    return regionMatch && severityMatch;
+  // Derived stats for dashboard cards (using live report data)
+  const totalReports = reports.length;
+  const activeReports = reports.filter((r) => (r.status || 'submitted') !== 'resolved').length;
+  const workingReports = reports.filter((r) => (r.status || 'submitted') === 'working').length;
+  const resolvedToday = reports.filter((r) => {
+    const ts = r.updatedAt || r.createdAt;
+    if (!ts) return false;
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    const now = new Date();
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate() &&
+      (r.status || 'submitted') === 'resolved'
+    );
+  }).length;
+
+  const categories = Array.from(
+    new Set(
+      reports
+        .map((r) => r.category)
+        .filter(Boolean),
+    ),
+  );
+
+  const filteredReports = reports.filter((r) => {
+    const status = r.status || 'submitted';
+    const category = r.category || 'uncategorized';
+    const statusOk = filterStatus === 'all' || status === filterStatus;
+    const categoryOk = filterCategory === 'all' || category === filterCategory;
+    return statusOk && categoryOk;
   });
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800">
-        <div className="px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-white shrink-0" />
-              <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-bold text-white truncate">Emergency Operations Center</h1>
-                <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">National Disaster Management System</p>
-              </div>
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-white shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-white truncate">Operator Console</h1>
+              <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">
+                Live citizen reports (read-only for citizens, actionable for operators)
+              </p>
             </div>
-            <div className="flex items-center gap-3">
-              <Link 
-                to="/operator/profile" 
-                className="hidden sm:inline-flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-md text-sm hover:bg-gray-700"
-              >
-                <User className="w-4 h-4" /> Profile
-              </Link>
+          </div>
 
-              <button
-                onClick={handleSignOut}
-                className={`px-3 py-2 rounded text-sm ${signOutLoading ? 'bg-gray-600 text-gray-300' : 'bg-red-600 text-white hover:bg-red-700'}`}
-                disabled={signOutLoading}
-              >
-                {signOutLoading ? 'Signing out...' : 'Sign out'}
-              </button>
-
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden text-white"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center text-xs text-gray-300">
+              <User className="w-4 h-4 mr-1" />
+              {currentUserEmail}
             </div>
+            <button
+              onClick={handleSignOut}
+              className={`px-3 py-2 rounded text-sm ${
+                signOutLoading ? 'bg-gray-600 text-gray-300' : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+              disabled={signOutLoading}
+            >
+              {signOutLoading ? 'Signing out…' : 'Sign out'}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-gray-800 border-b border-gray-700 px-4 py-3">
-          <div className="flex flex-col gap-2">
-            <Link 
-              to="/operator/profile" 
-              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-md text-sm hover:bg-gray-600"
-            >
-              <User className="w-4 h-4" /> Profile
-            </Link>
+      <main className="max-w-5xl mx-auto px-4 py-6 space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Emergency Operations Dashboard</h2>
+            <p className="text-xs text-gray-600">
+              Live incident feed with high-level stats, filters, and status controls.
+            </p>
           </div>
-        </div>
-      )}
-
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white border border-gray-200 p-3 sm:p-4">
-              <p className="text-xs sm:text-sm text-gray-600 mb-1">{stat.label}</p>
-              <p className={`text-xl sm:text-3xl font-bold ${stat.color}`}>{stat.value}</p>
-            </div>
-          ))}
+          <Link
+            to="/operator/pending"
+            className="text-xs text-gray-600 underline hover:text-gray-800 self-start sm:self-auto"
+          >
+            View my approval status
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Risk Heatmap */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border border-gray-200">
-              <div className="border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">Regional Risk Assessment</h2>
-              </div>
-              <div className="p-4 sm:p-6">
-                {/* Heatmap Visualization */}
-                <div className="space-y-2 sm:space-y-3">
-                  {riskZones.map((zone, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                      <div className="w-full sm:w-32 lg:w-40 text-xs sm:text-sm font-medium text-gray-700">
-                        {zone.name}
-                      </div>
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 h-6 sm:h-8 relative overflow-hidden">
-                          <div
-                            className={`h-full ${getRiskColor(zone.risk)}`}
-                            style={{ width: `${zone.level * 25}%` }}
-                          />
-                        </div>
-                        <div className={`px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-semibold uppercase ${getSeverityColor(zone.risk)}`}>
-                          {zone.risk}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {/* Summary cards (similar to old dashboard but using real data) */}
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white border rounded-lg p-3 sm:p-4">
+            <div className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide">Active incidents</div>
+            <div className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">{activeReports}</div>
+          </div>
+          <div className="bg-white border rounded-lg p-3 sm:p-4">
+            <div className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide">Working</div>
+            <div className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">{workingReports}</div>
+          </div>
+          <div className="bg-white border rounded-lg p-3 sm:p-4">
+            <div className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide">Resolved today</div>
+            <div className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">{resolvedToday}</div>
+          </div>
+          <div className="bg-white border rounded-lg p-3 sm:p-4">
+            <div className="text-[11px] sm:text-xs text-gray-500 uppercase tracking-wide">Total reports</div>
+            <div className="mt-1 text-xl sm:text-2xl font-semibold text-gray-900">{totalReports}</div>
+          </div>
+        </section>
 
-                {/* Legend */}
-                <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-600 mb-2">RISK LEVELS</p>
-                  <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-600 shrink-0" />
-                      <span className="text-xs text-gray-700">Critical</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-orange-500 shrink-0" />
-                      <span className="text-xs text-gray-700">High</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-500 shrink-0" />
-                      <span className="text-xs text-gray-700">Medium</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 shrink-0" />
-                      <span className="text-xs text-gray-700">Low</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+            {error}
+          </div>
+        )}
+
+        {/* Filters & controls */}
+        <section className="bg-white border rounded-lg p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-wrap gap-3">
+            <div>
+              <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">Status</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="text-xs sm:text-sm border rounded px-2 py-1 bg-white"
+              >
+                <option value="all">All</option>
+                <option value="submitted">Submitted</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="working">Working</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">Category</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="text-xs sm:text-sm border rounded px-2 py-1 bg-white max-w-[180px]"
+              >
+                <option value="all">All</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-200">
-              <div className="border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">Quick Actions</h2>
-              </div>
-              <div className="p-3 sm:p-4 space-y-2">
-                <button className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-900 text-white text-xs sm:text-sm font-medium hover:bg-gray-800">
-                  Deploy Resources
-                </button>
-                <button className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 text-gray-900 text-xs sm:text-sm font-medium hover:bg-gray-50">
-                  Issue Alert
-                </button>
-                <button className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 text-gray-900 text-xs sm:text-sm font-medium hover:bg-gray-50">
-                  Generate Report
-                </button>
-                <button className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 text-gray-900 text-xs sm:text-sm font-medium hover:bg-gray-50">
-                  Contact Agencies
-                </button>
-              </div>
-            </div>
+          <div className="text-[11px] sm:text-xs text-gray-500">
+            Showing <span className="font-semibold">{filteredReports.length}</span> of{' '}
+            <span className="font-semibold">{totalReports}</span> reports
           </div>
-        </div>
+        </section>
 
-        {/* Incidents List */}
-        <div className="mt-4 sm:mt-6 bg-white border border-gray-200">
-          <div className="border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Active Incidents</h2>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Filter className="w-4 h-4 text-gray-500 shrink-0" />
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 border border-gray-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                >
-                  {regions.map(region => (
-                    <option key={region.id} value={region.id}>{region.name}</option>
-                  ))}
-                </select>
-                <select
-                  value={selectedSeverity}
-                  onChange={(e) => setSelectedSeverity(e.target.value)}
-                  className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 border border-gray-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                >
-                  <option value="all">All Severity</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-            </div>
+        {/* Main incidents table */}
+        {loading ? (
+          <div className="p-6 bg-white rounded border text-center text-sm text-gray-600">
+            Loading reports…
           </div>
-
-          <div className="divide-y divide-gray-200">
-            {filteredIncidents.map((incident) => (
-              <div key={incident.id} className="p-3 sm:p-4 hover:bg-gray-50">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="text-xs sm:text-sm font-mono text-gray-600">{incident.id}</span>
-                      <span className={`px-2 py-0.5 text-xs font-semibold uppercase ${getSeverityColor(incident.severity)}`}>
-                        {incident.severity}
-                      </span>
-                      <span className={`px-2 py-0.5 text-xs font-medium uppercase border ${getStatusColor(incident.status)}`}>
-                        {incident.status}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{incident.type}</h3>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                        <span className="truncate">{incident.location}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                        {incident.time}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-left sm:text-right shrink-0">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Responders</p>
-                    <p className="text-lg sm:text-xl font-bold text-gray-900">{incident.responders}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+        ) : filteredReports.length === 0 ? (
+          <div className="p-6 bg-white rounded border text-center text-sm text-gray-600">
+            No reports match the current filters.
           </div>
-
-          {filteredIncidents.length === 0 && (
-            <div className="p-6 sm:p-8 text-center text-gray-500 text-sm sm:text-base">
-              No incidents match the selected filters.
-            </div>
-          )}
-        </div>
-      </div>
+        ) : (
+          <div className="bg-white border rounded shadow-sm overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3">Citizen</th>
+                  <th className="px-4 py-3">Title</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Location</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Last updated</th>
+                  <th className="px-4 py-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReports.map((r) => {
+                  const nextStatus = getNextStatus(r.status || 'submitted');
+                  return (
+                    <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="px-4 py-3 align-top text-xs text-gray-700">
+                        <div className="font-medium">{r.citizenEmail || '—'}</div>
+                        <div className="text-[10px] text-gray-400">{r.citizenId}</div>
+                      </td>
+                      <td className="px-4 py-3 align-top text-gray-900 font-medium">
+                        {r.title || 'Untitled'}
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-700">
+                        {r.category || '—'}
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-700 max-w-xs truncate">
+                        {r.locationText || '—'}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${statusBadgeClass(
+                            r.status || 'submitted',
+                          )}`}
+                        >
+                          {r.status || 'submitted'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top text-xs text-gray-700">
+                        {formatDate(r.updatedAt || r.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 align-top text-right">
+                        {nextStatus ? (
+                          <button
+                            onClick={() => handleAdvanceStatus(r.id, r.status || 'submitted')}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded bg-gray-900 text-white hover:bg-black"
+                          >
+                            Mark as {nextStatus}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-gray-400">Resolved</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { logOut } from '../../lib/auth';
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Shield, PlusCircle, FileText, User, Phone, AlertTriangle, Clock } from 'lucide-react';
+import { Shield, PlusCircle, FileText, User, Phone, AlertTriangle } from 'lucide-react';
 
 export default function CitizenHome() {
   const [user, setUser] = useState(null);
@@ -91,8 +91,8 @@ export default function CitizenHome() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Welcome */}
         <section className="mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900">Hello, {firstName}</h1>
-          <p className="text-gray-700 mt-2">Report incidents, view your reports, and update your profile.</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Hello, {firstName}</h1>
+          <p className="text-sm sm:text-base text-gray-700 mt-2">Report incidents, view your reports, and update your profile.</p>
 
           {/* Profile saving banner */}
           {user && !profile && (
@@ -165,7 +165,7 @@ export default function CitizenHome() {
 
         {/* Recent Reports */}
         <section className="mb-6">
-          <h2 className="text-lg font-medium text-gray-900">Recent reports</h2>
+          <h2 className="text-base sm:text-lg font-medium text-gray-900">Recent reports</h2>
           <div className="mt-3 p-4 bg-white rounded-lg border text-gray-700">
             <div className="text-sm">No recent reports to show. Use "Report an Incident" to create a new report.</div>
             <div className="mt-3">
@@ -178,7 +178,7 @@ export default function CitizenHome() {
 
         {/* Safety Info */}
         <section className="mb-6" aria-labelledby="safety-heading">
-          <h2 id="safety-heading" className="text-lg font-medium text-gray-900">Safety information</h2>
+          <h2 id="safety-heading" className="text-base sm:text-lg font-medium text-gray-900">Safety information</h2>
           <ul className="mt-3 list-disc pl-5 text-gray-700 space-y-2">
             <li>Stay informed: follow official local alerts.</li>
             <li>If you feel unsafe, move to higher ground or a safe area.</li>

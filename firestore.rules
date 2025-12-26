@@ -2,27 +2,61 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    match /users/{userId} {
-      allow create: if request.auth != null && request.auth.uid == userId;
-
-      // allow clients to update only a safe subset of fields on their profile
-      allow update: if request.auth != null && request.auth.uid == userId &&
-        request.resource.data.keys().hasOnly(["displayName","phone","photoURL","bio"]);
-
-      // allow admins to modify role/status fields
-      // DEV: allow a single hardcoded UID to update role/status during development
-      allow update: if request.auth != null && (
-        request.auth.token.admin == true || request.auth.uid == "REPLACE_WITH_ADMIN_UID"
-      );
-
-      // allow reads for authenticated users (admins can list all users)
-      allow get: if request.auth != null;
-      allow list: if request.auth != null && request.auth.token.admin == true;
+    /* ---------- Helper functions ---------- */
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // fallback deny
-    match /{document=**} {
-      allow read, write: if false;
+    function getUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUser().role == "admin";
+    }
+
+    function isOperator() {
+      return isSignedIn() && getUser().userType == "operator" && getUser().status == "approved";
+    }
+
+    function isCitizen() {
+      return isSignedIn() && getUser().userType == "citizen";
+    }
+
+    /* ---------- USERS COLLECTION ---------- */
+    match /users/{userId} {
+
+      // User can read their own profile
+      allow read: if isSignedIn() && request.auth.uid == userId;
+
+      // Admin can read all users (needed for admin dashboard queries)
+      allow read: if isAdmin();
+
+      // User can create their own profile
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // Only admin can update users (approve operators)
+      allow update: if isAdmin();
+
+      allow delete: if false;
+    }
+
+    /* ---------- REPORTS COLLECTION ---------- */
+    match /reports/{reportId} {
+
+      // Citizens can create reports
+      allow create: if isCitizen();
+
+      // Citizen can read ONLY their own reports
+      allow read: if isCitizen() && resource.data.citizenId == request.auth.uid;
+
+      // Operators and admins can read ALL reports
+      allow read: if isOperator() || isAdmin();
+
+      // Operators and admins can update report status
+      allow update: if isOperator() || isAdmin();
+
+      allow delete: if false;
     }
   }
 }

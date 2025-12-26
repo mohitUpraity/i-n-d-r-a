@@ -162,130 +162,162 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
-            {auth.currentUser?.email}
-          </span>
-          <button 
-            onClick={() => auth.signOut()} 
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-          >
-            Sign Out
-          </button>
+    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold">Admin Dashboard</h1>
+            <p className="mt-1 text-xs sm:text-sm text-gray-600">
+              Review pending operator/admin requests and manage approved operators.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <span className="hidden sm:inline text-xs sm:text-sm text-gray-600 break-all max-w-[180px]">
+              {auth.currentUser?.email}
+            </span>
+            <button
+              onClick={() => auth.signOut()}
+              className="px-3 py-2 sm:px-4 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm hover:bg-red-700"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
-      </div>
-      
-      {loading ? <div className="p-8 text-center"><Loader /></div> : (
-        <>
-          {/* Pending Requests Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-orange-600">Pending Operator Requests</h2>
-              <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">
-                {requests.length}
-              </span>
-            </div>
-            <div className="space-y-4">
-              {requests.length === 0 && <p className="text-gray-600">No pending requests.</p>}
-          {requests.map(r => (
-            <div key={r.id} className="p-4 border rounded">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-lg">{r.fullName || r.displayName || r.email || r.id}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    <div><strong>Email:</strong> {r.email}</div>
-                    <div><strong>Organization:</strong> {r.organization || 'N/A'}</div>
-                    <div><strong>Designation:</strong> {r.designation || 'N/A'}</div>
-                    <div><strong>Role:</strong> {r.role || 'N/A'}</div>
-                    <div><strong>Requested:</strong> {new Date((r.createdAt && r.createdAt.seconds ? r.createdAt.seconds * 1000 : Date.now())).toLocaleString()}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 ml-4">
-                  <button
-                    disabled={busy === r.id}
-                    onClick={() => approve(r.id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                  >{busy === r.id ? 'Working…' : 'Approve'}</button>
-                  <button
-                    disabled={busy === r.id}
-                    onClick={() => reject(r.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                  >{busy === r.id ? 'Working…' : 'Reject'}</button>
-                </div>
+
+        {loading ? (
+          <div className="p-8 text-center"><Loader /></div>
+        ) : (
+          <>
+            {/* Pending Requests Section */}
+            <div className="mb-8">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-orange-600">Pending Operator Requests</h2>
+                <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs sm:text-sm font-semibold">
+                  {requests.length}
+                </span>
               </div>
-            </div>
-          ))}
-            </div>
-          </div>
-
-          {/* Approved Operators Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-green-600">Approved Operators</h2>
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                {approvedOps.length}
-              </span>
-            </div>
-            <div className="space-y-4">
-              {approvedOps.length === 0 && <p className="text-gray-600">No approved operators yet.</p>}
-              {approvedOps.map(r => (
-                <div key={r.id} className="p-4 border border-green-200 rounded bg-green-50">
-                  <div className="font-medium text-lg">{r.fullName || r.displayName || r.email || r.id}</div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    <div><strong>Email:</strong> {r.email}</div>
-                    <div><strong>Organization:</strong> {r.organization || 'N/A'}</div>
-                    <div><strong>Designation:</strong> {r.designation || 'N/A'}</div>
-                    <div><strong>Role:</strong> {r.role || 'N/A'}</div>
-                    <div><strong>Status:</strong> <span className="text-green-600 font-semibold">{r.status}</span></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Pending Admin Requests Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-purple-600">Pending Admin Requests</h2>
-              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-                {adminRequests.length}
-              </span>
-            </div>
-            <div className="space-y-4">
-              {adminRequests.length === 0 && <p className="text-gray-600">No pending admin requests.</p>}
-              {adminRequests.map(r => (
-                <div key={r.id} className="p-4 border border-purple-200 rounded bg-purple-50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-lg">{r.fullName || r.displayName || r.email || r.id}</div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        <div><strong>Email:</strong> {r.email}</div>
-                        <div><strong>Role:</strong> Admin</div>
-                        <div><strong>Requested:</strong> {new Date((r.createdAt && r.createdAt.seconds ? r.createdAt.seconds * 1000 : Date.now())).toLocaleString()}</div>
+              <div className="space-y-4">
+                {requests.length === 0 && <p className="text-sm text-gray-600">No pending requests.</p>}
+                {requests.map(r => (
+                  <div key={r.id} className="p-4 border rounded-lg bg-orange-50/40">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-base sm:text-lg break-words">
+                          {r.fullName || r.displayName || r.email || r.id}
+                        </div>
+                        <div className="mt-1 text-xs sm:text-sm text-gray-600 space-y-0.5 sm:space-y-1">
+                          <div><strong>Email:</strong> <span className="break-all">{r.email}</span></div>
+                          <div><strong>Organization:</strong> {r.organization || 'N/A'}</div>
+                          <div><strong>Designation:</strong> {r.designation || 'N/A'}</div>
+                          <div><strong>Role:</strong> {r.role || 'N/A'}</div>
+                          <div>
+                            <strong>Requested:</strong>{' '}
+                            {new Date((r.createdAt && r.createdAt.seconds ? r.createdAt.seconds * 1000 : Date.now())).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+                        <button
+                          disabled={busy === r.id}
+                          onClick={() => approve(r.id)}
+                          className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {busy === r.id ? 'Working…' : 'Approve'}
+                        </button>
+                        <button
+                          disabled={busy === r.id}
+                          onClick={() => reject(r.id)}
+                          className="px-3 py-2 sm:px-4 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {busy === r.id ? 'Working…' : 'Reject'}
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        disabled={busy === r.id}
-                        onClick={() => approve(r.id)}
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                      >{busy === r.id ? 'Working…' : 'Approve'}</button>
-                      <button
-                        disabled={busy === r.id}
-                        onClick={() => reject(r.id)}
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-                      >{busy === r.id ? 'Working…' : 'Reject'}</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Approved Operators Section */}
+            <div className="mb-8">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-green-600">Approved Operators</h2>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs sm:text-sm font-semibold">
+                  {approvedOps.length}
+                </span>
+              </div>
+              <div className="space-y-4">
+                {approvedOps.length === 0 && <p className="text-sm text-gray-600">No approved operators yet.</p>}
+                {approvedOps.map(r => (
+                  <div key={r.id} className="p-4 border border-green-200 rounded-lg bg-green-50">
+                    <div className="font-medium text-base sm:text-lg break-words">
+                      {r.fullName || r.displayName || r.email || r.id}
+                    </div>
+                    <div className="mt-1 text-xs sm:text-sm text-gray-600 space-y-0.5 sm:space-y-1">
+                      <div><strong>Email:</strong> <span className="break-all">{r.email}</span></div>
+                      <div><strong>Organization:</strong> {r.organization || 'N/A'}</div>
+                      <div><strong>Designation:</strong> {r.designation || 'N/A'}</div>
+                      <div><strong>Role:</strong> {r.role || 'N/A'}</div>
+                      <div>
+                        <strong>Status:</strong>{' '}
+                        <span className="text-green-600 font-semibold">{r.status}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+
+            {/* Pending Admin Requests Section */}
+            <div className="mb-2 sm:mb-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold text-purple-600">Pending Admin Requests</h2>
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm font-semibold">
+                  {adminRequests.length}
+                </span>
+              </div>
+              <div className="space-y-4">
+                {adminRequests.length === 0 && <p className="text-sm text-gray-600">No pending admin requests.</p>}
+                {adminRequests.map(r => (
+                  <div key={r.id} className="p-4 border border-purple-200 rounded-lg bg-purple-50">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-base sm:text-lg break-words">
+                          {r.fullName || r.displayName || r.email || r.id}
+                        </div>
+                        <div className="mt-1 text-xs sm:text-sm text-gray-600 space-y-0.5 sm:space-y-1">
+                          <div><strong>Email:</strong> <span className="break-all">{r.email}</span></div>
+                          <div><strong>Role:</strong> Admin</div>
+                          <div>
+                            <strong>Requested:</strong>{' '}
+                            {new Date((r.createdAt && r.createdAt.seconds ? r.createdAt.seconds * 1000 : Date.now())).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2">
+                        <button
+                          disabled={busy === r.id}
+                          onClick={() => approve(r.id)}
+                          className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {busy === r.id ? 'Working…' : 'Approve'}
+                        </button>
+                        <button
+                          disabled={busy === r.id}
+                          onClick={() => reject(r.id)}
+                          className="px-3 py-2 sm:px-4 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {busy === r.id ? 'Working…' : 'Reject'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

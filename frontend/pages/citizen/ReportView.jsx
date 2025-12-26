@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { MapPin, Clock, FileText } from 'lucide-react';
+import { Clock, FileText, MapPin } from 'lucide-react';
 import Loader from '../../src/components/Loader';
 
 export default function ReportView() {
@@ -37,41 +37,68 @@ export default function ReportView() {
     }
   };
 
+  const formatStatus = (status) => {
+    if (!status) return 'submitted';
+    return status;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <button onClick={() => navigate(-1)} className="text-sm text-gray-700 hover:underline mb-4">← Back</button>
+        <button
+          onClick={() => navigate(-1)}
+          className="text-sm text-gray-700 hover:underline mb-4"
+        >
+          {'<- Back'}
+        </button>
 
         {loading ? (
-          <div className="p-6 bg-white rounded-lg border text-center"><Loader /></div>
+          <div className="p-6 bg-white rounded-lg border text-center">
+            <Loader />
+          </div>
         ) : !report ? (
           <div className="p-6 bg-white rounded-lg border text-gray-700">Report not found.</div>
         ) : (
           <article className="bg-white p-6 rounded-lg border">
-            <div className="flex items-start justify-between">
+            <header className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs text-gray-500">{report.type || 'Report'}</div>
-                <h1 className="text-xl font-semibold text-gray-900">{report.title || (report.description ? report.description.slice(0, 80) : 'Report details')}</h1>
-                <div className="text-xs text-gray-500 mt-1">{formatDate(report.createdAt)}</div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                  <FileText className="w-4 h-4" />
+                  <span>{report.category || 'report'}</span>
+                </div>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  {report.title || 'Report details'}
+                </h1>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                  <Clock className="w-4 h-4" />
+                  <span>Created {formatDate(report.createdAt)}</span>
+                </div>
               </div>
-            </div>
+              <div className="text-right">
+                <span className="inline-flex items-center px-2 py-1 text-xs rounded-full border bg-gray-50 text-gray-700">
+                  {formatStatus(report.status)}
+                </span>
+              </div>
+            </header>
 
-            <div className="mt-4 text-gray-700">
-              <p className="mb-2"><strong>Description:</strong></p>
-              <p className="whitespace-pre-wrap">{report.description || 'No additional details provided.'}</p>
+            <section className="mt-4 text-gray-700 space-y-4">
+              <div>
+                <p className="mb-1 text-sm font-semibold">Description</p>
+                <p className="whitespace-pre-wrap text-sm">
+                  {report.description || 'No additional details provided.'}
+                </p>
+              </div>
 
-              {report.location && (
-                <div className="mt-4 p-3 bg-gray-50 border rounded flex items-start gap-3">
+              {report.locationText && (
+                <div className="p-3 bg-gray-50 border rounded flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-gray-600" />
                   <div>
                     <div className="text-sm font-medium">Location</div>
-                    <div className="text-xs text-gray-600 font-mono">{report.location.lat}, {report.location.lng}</div>
+                    <div className="text-xs text-gray-700">{report.locationText}</div>
                   </div>
                 </div>
               )}
-
-              <div className="mt-4 text-sm text-gray-700">Status: {report.status || 'Submitted'}</div>
-            </div>
+            </section>
           </article>
         )}
       </div>
