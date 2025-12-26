@@ -1,6 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Shield, AlertTriangle, Users, Building2, Radio, Heart, Lock, Menu, X, ChevronRight, CheckCircle, Database, MapPin, TrendingUp, Bell, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import IndraLogoImg from '../src/assets/indra-logo-png.png';
+
+function IndraLogo({ className = "w-6 h-6", rounded = "rounded-lg" }) {
+  return (
+    <img
+      src={IndraLogoImg}
+      alt="INDRA Logo"
+      className={`${className} ${rounded} object-contain`}
+    />
+  );
+}
 
 // Hook for intersection observer
 function useInView() {
@@ -128,9 +139,8 @@ export default function IndraLanding() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3 group cursor-pointer">
-              <div className="p-2 bg-blue-900 rounded-lg group-hover:shadow-lg transition-all">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
+              <IndraLogo className="w-16 h-16" />
+              
               <div>
                 <span className="text-2xl font-bold text-gray-900">INDRA</span>
                 <p className="text-xs text-gray-500 font-medium">Disaster Management</p>
@@ -234,9 +244,8 @@ export default function IndraLanding() {
           <div className="grid md:grid-cols-3 gap-8 items-start">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-blue-900 rounded-lg">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
+                <div className="p-2 w-28 h-28  rounded-lg">
+                  <IndraLogo className="w-full h-full" />                </div>
                 <div>
                   <div className="text-lg font-bold">INDRA</div>
                   <div className="text-sm text-gray-500">Disaster Management Platform</div>
@@ -280,9 +289,9 @@ function HeroSection({ scrollToSection }) {
     <section className="bg-linear-to-b from-blue-50 to-white py-24 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl mb-4 shadow">
-            <Shield className="w-10 h-10 text-blue-900" />
-          </div>
+          <div className="inline-flex items-center justify-center w-1/2 h-1/2 rounded-2xl mb-4 shadow">
+            <IndraLogo className="w-full h-full" />   
+         </div>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-3 leading-tight">
             INDRA
           </h1>
