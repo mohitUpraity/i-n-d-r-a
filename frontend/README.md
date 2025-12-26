@@ -217,3 +217,108 @@ Deployment notes:
 
 **INDRA is designed to be built incrementally, responsibly, and in close alignment with real governance needs.**
 
+## Appendix: Firebase security, Cloud Functions, and real-time wiring
+
+This section explains how the current implementation uses Firebase for security, scalability, and real-time updates, and how the frontend is kept strictly separate from backend logic.
+
+### A. Firebase services and separation of concerns
+
+- **Firebase Auth** (see `frontend/lib/auth.js`, `context/AuthContext.jsx`)
+  - Handles all user identity: citizens, operators, and admins.
+  - Uses `browserLocalPersistence` so users stay signed in on the same browser until they explicitly sign out.
+- **Cloud Firestore** (see `frontend/lib/firebase.js`, `frontend/firestore.rules`)
+  - Stores user profiles and incident reports.
+  - Enforces server-side access control via security rules; the frontend cannot bypass these.
+- **(Planned) Firebase Cloud Functions** (see `backend/functions/README.md`)
+  - Own all privileged operations like role approvals and risk aggregation.
+  - Use the Admin SDK and custom claims; this code never runs in the browser.
+
+The React frontends talk only to Firebase Auth, Firestore, and (when enabled) callable/HTTP Cloud Functions. They never import backend Node.js code or hold admin credentials.
+
+### B. Authentication and role enforcement
+
+- Sign-in flows use Firebase Auth (Google sign-in and email/password helpers in `lib/auth.js`).
+- `ProtectedRoute` (`src/components/ProtectedRoute.jsx`):
+  - Listens to `onAuthStateChanged` and blocks unauthenticated users from protected routes.
+  - If a `requiredRole` (e.g. `'admin'` or `'operator'`) is specified, it checks **both**:
+    - ID token custom claims (e.g. `claims.admin === true`), and
+    - Firestore profile (`users/{uid}`) fields (`role` / `userType`).
+  - Shows an "Unauthorized" screen instead of sensitive pages when checks fail.
+- `AuthContext` (`context/AuthContext.jsx`) keeps an in-memory copy of the Firebase user + profile and steers users to the right app surface (e.g. operator dashboard vs. pending screen).
+- For development only, `DEV_HARDCODED_ADMIN_UID` (`lib/config.js`) can temporarily treat a specific UID as an admin without custom claims; this is documented and intended only for local testing.
+
+Result: UI routes for citizens, operators, and admins are all guarded on the **server-verified identity**, not on any client-side flag.
+
+### C. Secure incident reporting flow (citizen app)
+
+When a citizen clicks **Send Report** on the incident form (`pages/citizen/Reports.jsx`):
+
+1. The browser collects a minimal payload:
+   - `type` (what happened),
+   - optional `description`,
+   - approximate `location` from the device (`lat`, `lng`),
+   - `createdBy` set to the authenticated user’s UID,
+   - `status` initialised to `'Submitted'`, plus `createdAt = serverTimestamp()`.
+2. The frontend writes this document to Firestore using:
+   - `addDoc(collection(db, 'reports'), payload)`.
+3. The report is treated as **untrusted input**. Any future grid-based risk scoring, alerting, or enrichment is performed in backend logic (Cloud Functions / analysis layer), not in the browser.
+
+In the citizen "My Reports" screen (`pages/citizen/ReportsList.jsx`), the app subscribes to a Firestore query filtered by `createdBy`:
+
+- `onSnapshot(query(collection(db, 'reports'), where('createdBy', '==', uid), orderBy('createdAt', 'desc')), ...)`
+
+This gives the citizen **real-time updates** as their report status evolves, without polling.
+
+### D. Admin/operator approvals and security
+
+- Role requests (operators/admins) are stored as documents under `users/{uid}` with fields like `userType` and `status`.
+- The admin dashboard (`pages/admin/AdminDashboard.jsx`):
+  - Subscribes in real time to pending operator and admin requests using `onSnapshot` queries on the `users` collection.
+  - Lets approved admins click **Approve** / **Reject**, which updates `status` (and role metadata) in Firestore.
+
+Planned Cloud Functions (see `backend/functions/README.md`):
+
+- `approveOperator` (callable):
+  - Checks `context.auth.token.admin === true`.
+  - Updates `users/{uid}` to `{ status: 'approved', role: 'operator' }`.
+  - Sets an Auth custom claim `{ operator: true }`.
+- `rejectOperator` (callable):
+  - Checks `context.auth.token.admin === true`.
+  - Marks `users/{uid}` as `{ status: 'rejected' }` and clears related claims.
+
+During early hackathon iterations, these Cloud Functions are deliberately disabled (`backend/functions/index.js` is a placeholder), and the admin UI performs **direct Firestore updates**. In a hardened deployment, these updates move fully behind callable functions plus stricter Firestore rules.
+
+### E. Firestore security rules and data isolation
+
+The Firestore rules file used for this frontend is `frontend/firestore.rules`:
+
+- `users/{userId}`:
+  - **Create**: only allowed when `request.auth.uid == userId`.
+  - **Update (safe fields)**: users can only update a limited, whitelisted set of profile fields (display name, phone, photo URL, bio).
+  - **Update (role/status)**: restricted to admins or a single development admin UID.
+  - **Read**: any authenticated user can read their own profile; listing all users is restricted to admins.
+- **Fallback**: everything else (`match /{document=**}`) is denied by default.
+
+This "deny by default" posture means new collections (such as derived risk grids) must be explicitly opened with rules or accessed only from Cloud Functions using the Admin SDK.
+
+### F. Real-time updates at scale
+
+- Citizens:
+  - Subscribe to their own `reports` via `onSnapshot`, filtered by `createdBy`.
+- Admins:
+  - Subscribe to `users` documents with `status == 'pending'` and `userType == 'operator'` or `'admin'`.
+
+Firestore manages **fan-out and scaling** of these real-time listeners. As the number of users grows, Firebase allocates more capacity; no app server needs manual load balancing.
+
+### G. "Frontend doesn’t touch backend code"
+
+Concretely, this means:
+
+- React apps never import or execute any of the Node.js backend / Cloud Functions code.
+- Frontend code only:
+  - Calls Firebase Auth APIs,
+  - Reads/writes Firestore documents that pass security rules,
+  - (When enabled) calls named Cloud Functions over HTTPS.
+- All sensitive logic — risk scoring, role escalations, custom claims, and any cross-user data access — lives in backend functions and Firestore rules, where it can be centrally audited and scaled.
+
+This ensures INDRA can grow from a hackathon prototype into a production-ready system without changing the mental model: **thin, role-aware frontends on top of a secure, function-driven backend.**
