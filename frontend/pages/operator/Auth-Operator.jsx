@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle, Building2 } from 'lucide-react';
+import { DEV_HARDCODED_ADMIN_EMAIL, DEV_HARDCODED_ADMIN_PASSWORD } from '../../lib/config';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmail, createUserWithEmail } from '../../lib/auth';
 import { ensureUserProfile } from '../../lib/userProfile';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 export default function AuthOperator() {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,7 +15,9 @@ export default function AuthOperator() {
     confirmPassword: '',
     fullName: '',
     organization: '',
-    designation: ''
+    organizationOther: '',
+    designation: '',
+    role: ''
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -39,6 +44,8 @@ export default function AuthOperator() {
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
     if (!formData.organization) newErrors.organization = 'Organization is required';
+    if (formData.organization === 'Other' && !formData.organizationOther) newErrors.organizationOther = 'Please specify organization';
+    if (!formData.role) newErrors.role = 'Role is required';
     if (!formData.designation) newErrors.designation = 'Designation is required';
     if (!formData.password) newErrors.password = 'Password is required';
     if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
@@ -59,23 +66,63 @@ export default function AuthOperator() {
         if (isLogin) {
           const res = await signInWithEmail(formData.email, formData.password);
           const user = res.user;
-          const profileRes = await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
-          if (!profileRes?.success) {
-            console.error('Failed to create/update operator profile after sign-in', profileRes?.error);
-            setErrors({ general: 'Signed in but failed to create your operator profile. Please contact support.' });
+          
+          // Check if profile exists - don't overwrite on login
+          const ref = doc(db, 'users', user.uid);
+          const snap = await getDoc(ref);
+          
+          if (!snap.exists()) {
+            // Profile doesn't exist - this shouldn't happen for login, but handle it
+            console.error('Profile not found for user:', user.uid);
+            setErrors({ general: 'Account not found. Please register first.' });
+            setLoading(false);
             return;
           }
-          navigate('/operator/dashboard');
+          
+          const profile = snap.data();
+          console.log('User profile loaded:', profile);
+          
+          // Navigate based on approval status and role
+          if (profile.status === 'approved' && (profile.role === 'operator' || profile.userType === 'operator')) {
+            console.log('Navigating to operator dashboard');
+            navigate('/operator/dashboard');
+          } else if (profile.status === 'pending') {
+            console.log('Navigating to pending page');
+            navigate('/operator/pending');
+          } else if (profile.role === 'admin' || profile.userType === 'admin') {
+            // If admin logs in here, redirect to admin dashboard
+            console.log('Admin detected, redirecting to admin dashboard');
+            navigate('/admin');
+          } else {
+            console.error('Unexpected status:', profile.status);
+            setErrors({ general: 'Your account status is ' + profile.status + '. Please contact support.' });
+            setLoading(false);
+          }
         } else {
+          console.log('Creating new operator account...');
           const res = await createUserWithEmail(formData.email, formData.password);
           const user = res.user;
-          const profileRes = await ensureUserProfile(user, { userType: 'operator', fullName: formData.fullName, organization: formData.organization, designation: formData.designation });
+          console.log('Firebase Auth user created:', user.uid);
+          
+          const orgToSave = formData.organization === 'Other' ? formData.organizationOther : formData.organization;
+          const profileData = { 
+            userType: 'operator', 
+            fullName: formData.fullName, 
+            organization: orgToSave, 
+            designation: formData.designation, 
+            role: formData.role || null 
+          };
+          console.log('Creating operator profile with data:', profileData);
+          
+          const profileRes = await ensureUserProfile(user, profileData);
           if (!profileRes?.success) {
             console.error('Failed to create/update operator profile after account creation', profileRes?.error);
             setErrors({ general: 'Account created but we could not finish creating your profile. Please contact support.' });
             return;
           }
-          navigate('/operator/dashboard');
+          console.log('Operator profile created successfully. Navigating to pending page...');
+          // New operators are pending by default
+          navigate('/operator/pending');
         }
       } catch (err) {
         console.error(err);
@@ -181,25 +228,81 @@ export default function AuthOperator() {
                 </label>
                 <div className="relative">
                   <Building2 className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
+                  <select
                     name="organization"
                     value={formData.organization}
                     onChange={handleInputChange}
-                    placeholder="e.g., Fire Department, Police, Disaster Management"
                     className={`w-full pl-11 pr-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
                       errors.organization
                         ? 'border-red-500 bg-red-50'
                         : 'border-gray-200 focus:border-blue-900'
                     }`}
-                  />
+                  >
+                    <option value="">Select organization</option>
+                    <option value="Fire Department">Fire Department</option>
+                    <option value="Police">Police</option>
+                    <option value="Disaster Management">Disaster Management</option>
+                    <option value="NGO">NGO</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
+
+                {formData.organization === 'Other' && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      name="organizationOther"
+                      value={formData.organizationOther}
+                      onChange={handleInputChange}
+                      placeholder="Please specify organization"
+                      className={`w-full px-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
+                        errors.organizationOther
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-200 focus:border-blue-900'
+                      }`}
+                    />
+                    {errors.organizationOther && (
+                      <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.organizationOther}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {errors.organization && (
                   <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
                     {errors.organization}
                   </p>
                 )}
+
+                {/* Role - Only for Signup */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
+                      errors.role ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-blue-900'
+                    }`}
+                  >
+                    <option value="">Select role</option>
+                    <option value="Responder">Responder</option>
+                    <option value="Coordinator">Coordinator</option>
+                    <option value="Manager">Manager</option>
+                  </select>
+                  {errors.role && (
+                    <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.role}
+                    </p>
+                  )}
+                </div>
+
               </div>
             )}
 
@@ -307,7 +410,17 @@ export default function AuthOperator() {
           </form>
 
           {/* Divider - Removed Google Auth */}
-          
+
+          {/* Dev admin credentials (for testing) */}
+          <div className="mt-4 p-3 bg-yellow-50 border rounded text-sm">
+            <strong>Dev admin test credentials:</strong>
+            <div className="mt-1 font-mono text-sm">
+              Email: {DEV_HARDCODED_ADMIN_EMAIL} <br />
+              Password: {DEV_HARDCODED_ADMIN_PASSWORD}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Use these at <code>/auth/operator</code> to sign in as the dev admin for testing. After signing in, set the admin UID in <code>frontend/lib/config.js</code> to enable the admin UI.</p>
+          </div>
+
           {/* Toggle Login/Signup */}
           <div className="text-center mt-6 text-gray-600">
             {isLogin ? (
@@ -337,6 +450,19 @@ export default function AuthOperator() {
                 </button>
               </>
             )}
+          </div>
+
+          {/* Admin Login Link */}
+          <div className="text-center mt-4 pt-4 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              System Administrator?{' '}
+              <Link
+                to="/auth/admin"
+                className="text-red-900 font-black hover:underline"
+              >
+                Admin Login
+              </Link>
+            </div>
           </div>
         </div>
 

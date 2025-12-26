@@ -4,6 +4,7 @@ import { auth, db } from '../../lib/firebase';
 import { Navigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import Loader from './Loader';
+import { DEV_HARDCODED_ADMIN_UID } from '../../lib/config';
 
 export default function ProtectedRoute({ children, redirectTo = '/auth/citizen', requiredRole = null }) {
   const [loading, setLoading] = useState(true);
@@ -58,9 +59,8 @@ export default function ProtectedRoute({ children, redirectTo = '/auth/citizen',
           const hasClaim = tokenClaims[requiredRole] === true || tokenClaims.admin === true;
           const hasProfileRole = data && (data.role === requiredRole || data.userType === requiredRole);
 
-          // DEV override: allow a specific UID to act as admin during development
-          const DEV_ADMIN_UID = 'REPLACE_WITH_ADMIN_UID';
-          const isDevAdmin = u && u.uid === DEV_ADMIN_UID && requiredRole === 'admin';
+          // DEV override: allow the hardcoded admin UID to act as admin during development
+          const isDevAdmin = u && u.uid === DEV_HARDCODED_ADMIN_UID && requiredRole === 'admin';
 
           setAuthorized(hasClaim || !!hasProfileRole || isDevAdmin);
         } catch (err) {

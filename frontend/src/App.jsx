@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import AuthCitizen from '../pages/citizen/Auth-Citizen';
 import AuthOperator from '../pages/operator/Auth-Operator';
+import AuthAdmin from '../pages/admin/Auth-Admin';
 import IndraLanding from '../pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import CitizenHome from '../pages/citizen/CitizenHome';
@@ -26,6 +27,7 @@ const App = () => {
         <Route path='/' element={<IndraLanding />} />
         <Route path='/auth/citizen' element={<AuthCitizen />} />
         <Route path='/auth/operator' element={<AuthOperator />} />
+        <Route path='/auth/admin' element={<AuthAdmin />} />
 
         {/* Protected routes */}
         <Route

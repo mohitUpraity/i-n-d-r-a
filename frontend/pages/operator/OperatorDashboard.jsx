@@ -1,10 +1,44 @@
-import React, { useState } from 'react';
-import { AlertTriangle, Shield, MapPin, Clock, ChevronDown, Filter, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, Shield, MapPin, Clock, ChevronDown, Filter, Menu, X, User } from 'lucide-react';
+import { logOut } from '../../lib/auth';
+import { auth, db } from '../../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function CommandDashboard() {
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedSeverity, setSelectedSeverity] = useState('all');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [signOutLoading, setSignOutLoading] = useState(false);
+
+  useEffect(() => {
+    const u = auth.currentUser;
+    setUser(u);
+    if (u) {
+      (async () => {
+        try {
+          const ref = doc(db, 'users', u.uid);
+          const snap = await getDoc(ref);
+          if (snap.exists()) setProfile(snap.data());
+        } catch (err) {
+          console.warn('Could not fetch user profile', err);
+        }
+      })();
+    }
+  }, []);
+
+  const handleSignOut = async () => {
+    setSignOutLoading(true);
+    try {
+      await logOut();
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Sign out failed', err);
+      setSignOutLoading(false);
+    }
+  };
 
   const regions = [
     { id: 'all', name: 'All Regions' },
@@ -142,10 +176,21 @@ export default function CommandDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-right hidden md:block">
-                <p className="text-sm text-gray-400">Administrator</p>
-                <p className="text-sm font-medium text-white">J. Martinez</p>
-              </div>
+              <Link 
+                to="/operator/profile" 
+                className="hidden sm:inline-flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-md text-sm hover:bg-gray-700"
+              >
+                <User className="w-4 h-4" /> Profile
+              </Link>
+
+              <button
+                onClick={handleSignOut}
+                className={`px-3 py-2 rounded text-sm ${signOutLoading ? 'bg-gray-600 text-gray-300' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                disabled={signOutLoading}
+              >
+                {signOutLoading ? 'Signing out...' : 'Sign out'}
+              </button>
+
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden text-white"
@@ -160,8 +205,14 @@ export default function CommandDashboard() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-gray-800 border-b border-gray-700 px-4 py-3">
-          <p className="text-sm text-gray-400 mb-1">Administrator</p>
-          <p className="text-sm font-medium text-white">J. Martinez</p>
+          <div className="flex flex-col gap-2">
+            <Link 
+              to="/operator/profile" 
+              className="inline-flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-md text-sm hover:bg-gray-600"
+            >
+              <User className="w-4 h-4" /> Profile
+            </Link>
+          </div>
         </div>
       )}
 
