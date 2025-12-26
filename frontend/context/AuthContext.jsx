@@ -39,10 +39,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (loading || !profile) return;
 
-    if (profile.userType === 'citizen') {
-      navigate('/citizen/home');
-      return;
-    }
+    // if (profile.userType === 'citizen') {
+    //   navigate('/citizen/home');
+    //   return;
+    // }
 
     if (profile.userType === 'operator') {
       if (profile.status === 'approved') navigate('/operator/dashboard');
