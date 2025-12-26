@@ -125,12 +125,13 @@ INDRA uses a **grid-based risk model** inspired by India’s Digital Public Infr
 - Each grid maintains a dynamic, time-aware risk score.
 - Risk evolves based on incident type, severity, frequency, and recency.
 - Overall risk is **calculated at the grid level, not just at a single point**, which better matches how field teams and districts plan interventions.
+- In the full design, **each incoming report is reviewed by an AI-assisted risk engine** that applies custom risk-calculation algorithms and updates the corresponding grid’s risk level.
 
-This area-first approach aligns with how governments act on **regions**, not individual coordinates, and reflects patterns in disaster-management research where:
+This area-first approach, together with the DIGIPIN-inspired grid system, aligns with how governments act on **regions**, not individual coordinates, and reflects patterns in disaster-management research where:
 - Community-reported data is fused with geospatial zoning; and
 - Decisions are based on vulnerability of zones rather than isolated pins.
 
-INDRA brings these research-backed ideas into a practical, hackathon-ready implementation for Himalayan states.
+In the current prototype, this AI risk engine is not yet deployed as a live Cloud Function (for billing reasons), but the **full DIGIPIN-inspired grid system and risk algorithms are designed and documented**, and are planned to be enabled in Round 2.
 
 ---
 
@@ -189,7 +190,9 @@ The stack prioritizes **speed, clarity, and deployability**.
 - `/apps/government-dashboard` – Authority command panel
 - `/functions` – Backend risk and alert logic
 - `/intelligence` – AI-assisted analysis
-- `/docs` – Architecture and flow documentation
+- `/docs` – Architecture, flow documentation, and Round 2 roadmap
+  - `/docs/flows/README.md` – Textual flow charts, DFD-style descriptions, and real-time wiring between citizen, operator, and admin apps
+  - `/docs/round-2/README.md` – Detailed Round 2 improvements and team plan
 
 ---
 

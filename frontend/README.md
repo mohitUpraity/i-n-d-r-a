@@ -108,8 +108,9 @@ INDRA uses a **grid-based risk model** inspired by India’s Digital Public Infr
 - Reports are aggregated into larger decision-level grids
 - Each grid maintains a dynamic risk score
 - Risk evolves based on incident type, severity, and frequency
+- In the full backend design, **each report is passed through an AI-assisted risk engine** that applies custom risk-calculation algorithms and marks the corresponding grid’s risk level.
 
-This approach aligns with how governments act on **regions**, not individual coordinates.
+This approach, and the underlying DIGIPIN-inspired grid system, aligns with how governments act on **regions**, not individual coordinates. In the current Round 1 prototype, this AI engine is not yet live as a Cloud Function; risk updates are represented conceptually in Firestore and the dashboard, and will be automated in Round 2.
 
 ---
 
@@ -164,7 +165,9 @@ The stack prioritizes **speed, clarity, and deployability**.
 - `/apps/government-dashboard` – Authority command panel
 - `/functions` – Backend risk and alert logic
 - `/intelligence` – AI-assisted analysis
-- `/docs` – Architecture and flow documentation
+- `/docs` – Architecture, flow documentation, and Round 2 roadmap
+  - `/docs/flows/README.md` – Textual flow charts, DFD-style descriptions, and real-time wiring between citizen, operator, and admin apps
+  - `/docs/round-2/README.md` – Detailed Round 2 improvements and team plan
 
 ---
 
