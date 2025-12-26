@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Clock, FileText, MapPin } from 'lucide-react';
 import Loader from '../../src/components/Loader';
@@ -14,17 +14,26 @@ export default function ReportView() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    (async () => {
-      try {
-        const ref = doc(db, 'reports', id);
-        const snap = await getDoc(ref);
-        if (snap.exists()) setReport({ id: snap.id, ...snap.data() });
-      } catch (err) {
-        console.error('Could not fetch report', err);
-      } finally {
+
+    // Live subscription so status and other fields update in real time
+    const ref = doc(db, 'reports', id);
+    const unsubscribe = onSnapshot(
+      ref,
+      (snap) => {
+        if (snap.exists()) {
+          setReport({ id: snap.id, ...snap.data() });
+        } else {
+          setReport(null);
+        }
         setLoading(false);
-      }
-    })();
+      },
+      (err) => {
+        console.error('Could not subscribe to report', err);
+        setLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
   }, [id]);
 
   const formatDate = (ts) => {

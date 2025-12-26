@@ -51,7 +51,11 @@ export const subscribeToCitizenReports = (citizenId, callback, errorCallback) =>
   // We scope by citizenId only; the fact that this represents a "citizen view"
   // is a UI concern. Firestore security rules should separately ensure that a
   // citizen can only read their own reports.
-  const q = query(colRef, where('citizenId', '==', citizenId), orderBy('createdAt', 'desc'));
+  // NOTE: We intentionally avoid combining where+orderBy here to prevent
+  // requiring a composite index during early development. If you want strictly
+  // ordered results, you can add an index in Firestore and reintroduce
+  // orderBy('createdAt', 'desc').
+  const q = query(colRef, where('citizenId', '==', citizenId));
   return onSnapshot(q, callback, errorCallback);
 };
 
