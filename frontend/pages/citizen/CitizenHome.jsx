@@ -52,7 +52,7 @@ export default function CitizenHome() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Shield className="w-8 h-8 text-green-700" aria-hidden />
             <div>
@@ -61,25 +61,34 @@ export default function CitizenHome() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <a href="tel:112" className="inline-flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700" aria-label="Call emergency services">
-              <Phone className="w-4 h-4" aria-hidden /> Emergency
-            </a>
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+          <a
+            href="tel:112"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 w-full sm:w-auto"
+            aria-label="Call emergency services"
+          >
+            <Phone className="w-4 h-4" aria-hidden /> Emergency
+          </a>
 
-            <Link to="/profile" className="hidden sm:inline text-sm text-gray-700 hover:underline">Profile</Link>
+          <Link
+            to="/profile"
+            className="hidden sm:inline text-sm text-gray-700 hover:underline"
+          >
+            Profile
+          </Link>
 
-            <button
-              onClick={handleSignOut}
-              className={`px-3 py-2 rounded text-sm ${signOutLoading ? 'bg-gray-200 text-gray-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
-              aria-label="Sign out"
-            >
-              {signOutLoading ? 'Signing out...' : 'Sign out'}
-            </button>
-          </div>
+          <button
+            onClick={handleSignOut}
+            className={`w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 rounded text-sm ${signOutLoading ? 'bg-gray-200 text-gray-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
+            aria-label="Sign out"
+          >
+            {signOutLoading ? 'Signing out...' : 'Sign out'}
+          </button>
+        </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Welcome */}
         <section className="mb-4">
           <h1 className="text-2xl font-semibold text-gray-900">Hello, {firstName}</h1>
@@ -179,9 +188,9 @@ export default function CitizenHome() {
         </section>
 
         {/* Footer / Disclaimer */}
-        <footer className="flex items-center justify-between text-sm text-gray-600">
+        <footer className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600">
           <p>Information is advisory. Follow official instructions from authorities.</p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <a href="#" className="hover:underline">Language</a>
             <a href="#" className="hover:underline">Report abuse</a>
           </div>
