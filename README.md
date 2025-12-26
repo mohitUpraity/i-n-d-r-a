@@ -40,13 +40,19 @@ As a result, authorities lack a **single source of truth** for decision-making.
 
 ## 4. Solution Overview
 
-INDRA addresses these gaps by acting as a **central intelligence and coordination layer**:
+INDRA addresses these gaps by acting as a **central intelligence and coordination layer** with two primary user-facing surfaces:
 
-- Aggregates citizen-reported incidents
-- Encodes locations using a **grid-based geospatial model inspired by DIGIPIN**
-- Computes region-level risk scores in the backend
-- Presents simplified risk views to citizens and detailed views to authorities
-- Supports response coordination and post-disaster assessment
+- **Citizens (public app)** – report what they see on the ground and receive grid-level safety signals.
+- **Operators (government dashboard)** – monitor risk, plan resources, and coordinate actions across regions.
+
+At a system level, INDRA:
+
+- Aggregates citizen-reported incidents (text, photos, categories).
+- Encodes locations using a **grid-based geospatial model inspired by DIGIPIN**, so that decisions are taken on areas, not just points.
+- Computes region-level risk scores in the backend.
+- Continuously checks where citizens (who have opted in to GPS) are located relative to risky grids and surfaces **real-time alerts** when they enter high-risk cells.
+- Presents simplified risk views to citizens and detailed, explainable views to authorities.
+- Supports response coordination and post-disaster assessment across the full disaster lifecycle (**before**, **during**, and **after** an event).
 
 **What INDRA is NOT**:
 - Not an automated enforcement system
@@ -72,31 +78,41 @@ All critical logic resides in the backend to ensure data integrity and security.
 ## 6. User Roles & Access Model
 
 ### Citizens
-- Submit incident reports
-- View simplified safety alerts
-- Track status of submitted reports
+- Submit structured incident reports (category, description, optional media).
+- Allow the app (when open and with GPS permission) to track their current grid and receive **real-time alerts** when they enter or move within **critical or high-risk grids**.
+- View a simplified “is my area safe?” status derived from the backend grid risk model.
+- Track status of submitted reports and see when authorities have acknowledged or acted on them.
 
 ### Authorities (Operators)
-- View grid-wise risk summaries
-- Monitor incident density
-- Prioritize and log response actions
+- View **grid-wise risk summaries** with color-coded levels (Low / Medium / High).
+- See **incident density, trends, and AI-generated summaries** of what is happening in each grid.
+- Use AI-assisted suggestions on:
+  - Which regions to prioritize first.
+  - How to pre-position and allocate resources (teams, vehicles, medical kits).
+  - How many temporary shelters might be required based on affected population estimates (heuristic in Round 1).
+- Log decisions, actions taken, and expected impact for auditability.
 
 ### Emergency Responders & NGOs
 - Planned modules for future rounds
 - Receive assignments and view needs-based information
 
-Roles are **assigned by the system**, not chosen by users.
+Roles are **assigned by the system**, not chosen by users, to prevent misuse of operator capabilities.
 
 ---
 
 ## 7. Core Features (Round 1 Scope)
 
-- Citizen incident reporting
-- Grid-based risk aggregation
-- Authority command dashboard
-- Risk level categorization (Low / Medium / High)
-- Backend-driven alert triggers
-- Role-based data visibility
+- Citizen incident reporting.
+- Grid-based risk aggregation (DIGIPIN-inspired, area-based).
+- Real-time citizen alerts when entering risky grids (opt-in GPS, app open).
+- Authority command dashboard with AI-assisted summaries.
+- Risk level categorization (Low / Medium / High; extensible to more granular levels).
+- Backend-driven alert triggers and escalation rules.
+- Role-based data visibility (citizen vs operator).
+- Coverage of **all three disaster stages**:
+  - **Before**: watchlists for vulnerable grids, early alerts, preventive inspections.
+  - **During**: live incident triage, hotspots, and shelter suggestions.
+  - **After**: damage and needs logging per grid, recovery prioritization (what to repair or restore first).
 
 ---
 
@@ -104,23 +120,32 @@ Roles are **assigned by the system**, not chosen by users.
 
 INDRA uses a **grid-based risk model** inspired by India’s Digital Public Infrastructure (DIGIPIN):
 
-- Individual reports are tagged with precise location encoding
-- Reports are aggregated into larger decision-level grids
-- Each grid maintains a dynamic risk score
-- Risk evolves based on incident type, severity, and frequency
+- Individual reports are tagged with precise location encoding.
+- Reports are aggregated into larger decision-level grids.
+- Each grid maintains a dynamic, time-aware risk score.
+- Risk evolves based on incident type, severity, frequency, and recency.
+- Overall risk is **calculated at the grid level, not just at a single point**, which better matches how field teams and districts plan interventions.
 
-This approach aligns with how governments act on **regions**, not individual coordinates.
+This area-first approach aligns with how governments act on **regions**, not individual coordinates, and reflects patterns in disaster-management research where:
+- Community-reported data is fused with geospatial zoning; and
+- Decisions are based on vulnerability of zones rather than isolated pins.
+
+INDRA brings these research-backed ideas into a practical, hackathon-ready implementation for Himalayan states.
 
 ---
 
-## 9. Data Flow (End-to-End)
+## 9. Methodology & Data Flow (End-to-End)
 
-1. Citizen submits a report
-2. Report is stored as untrusted input
-3. Backend function processes the report
-4. Relevant grid risk score is updated
-5. Authority dashboard reflects updated risk
-6. Alerts are generated if thresholds are crossed
+1. Citizen opens the app, signs in, and (optionally) grants GPS permission.
+2. Citizen submits a structured report (category, description, optional media).
+3. The report is stored as untrusted input in Firestore.
+4. A backend Cloud Function validates, normalizes, and maps the report to a grid.
+5. The relevant grid’s risk score is updated using a rule-based, data-driven heuristic.
+6. The authority dashboard reflects updated risk and AI generates short, human-readable summaries of the situation per grid.
+7. If thresholds are crossed, alert events are generated:
+   - Citizens in or entering that grid (with app open and location on) see warnings.
+   - Operators receive highlighted grids and recommended follow-up actions.
+8. During and after the event, operators log actions taken and resources deployed, gradually building a recovery and "lessons learned" dataset for that grid.
 
 ---
 
