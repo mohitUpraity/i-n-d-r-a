@@ -211,8 +211,13 @@ This submission emphasizes:
 - SMS and offline alerts
 - Expansion to other Himalayan states
 - Responder and NGO modules
+- Backend Automation (Prototype Note)
+Due to billing constraints during the hackathon window, automated backend functions (Cloud Functions) are designed but not deployed.
+Current prototype demonstrates the same behavior using real-time Firestore with role-based enforcement.
+Automation will be enabled in Round 2 once billing is active.
 
 ---
 
 **INDRA is designed to be built incrementally, responsibly, and in close alignment with real governance needs.**
+
 
