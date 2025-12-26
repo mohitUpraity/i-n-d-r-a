@@ -64,8 +64,10 @@ export default function IndraLanding() {
     <div className="min-h-screen bg-white">
       {/* Prototype phase popup */}
       {showPrototypeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="max-w-lg w-full mx-4 bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/40 backdrop-blur-sm pt-20 sm:pt-0 p-3">
+
+           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 sm:p-6 relative">
+
             <button
               onClick={() => setShowPrototypeModal(false)}
               className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
@@ -79,7 +81,8 @@ export default function IndraLanding() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Prototype phase – what’s live vs coming soon</h2>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-xs sm:text-sm text-gray-600 leading-relaxed">
+
                   You are viewing the <span className="font-semibold">hackathon prototype</span> of INDRA. Some features are fully
                   wired in real time; others (like the AI risk engine and advanced DIGIPIN grids) are designed but not yet
                   enabled in this build.
@@ -87,7 +90,8 @@ export default function IndraLanding() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+
               <div className="bg-green-50 border border-green-200 rounded-xl p-3">
                 <p className="flex items-center gap-2 font-semibold text-green-800 mb-1">
                   <CheckCircle className="w-4 h-4" />
@@ -113,7 +117,7 @@ export default function IndraLanding() {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col sm:flex-row justify-end gap-3 text-sm">
+            <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 text-sm">
               <button
                 onClick={() => setShowPrototypeModal(false)}
                 className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-50"
