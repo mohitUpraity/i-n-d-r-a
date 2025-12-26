@@ -30,6 +30,7 @@ function useInView() {
 export default function IndraLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showPrototypeModal, setShowPrototypeModal] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -42,8 +43,84 @@ export default function IndraLanding() {
     setMobileMenuOpen(false);
   };
 
+  const handleViewDetails = () => {
+    setShowPrototypeModal(false);
+    // small timeout so the modal close animation (if any) feels natural
+    setTimeout(() => scrollToSection('prototype-status'), 50);
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      {/* Prototype phase popup */}
+      {showPrototypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="max-w-lg w-full mx-4 bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 relative">
+            <button
+              onClick={() => setShowPrototypeModal(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              aria-label="Close prototype notice"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-yellow-100">
+                <AlertTriangle className="w-5 h-5 text-yellow-700" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Prototype phase – what’s live vs coming soon</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  You are viewing the <span className="font-semibold">hackathon prototype</span> of INDRA. Some features are fully
+                  wired in real time; others (like the AI risk engine and advanced DIGIPIN grids) are designed but not yet
+                  enabled in this build.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 text-sm">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                <p className="flex items-center gap-2 font-semibold text-green-800 mb-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Live in this prototype
+                </p>
+                <ul className="list-disc list-inside text-green-900 space-y-1">
+                  <li>Citizen incident reporting &amp; "My Reports" updates</li>
+                  <li>Operator &amp; admin dashboards with role-based access</li>
+                  <li>Real-time wiring via Firebase Auth + Firestore</li>
+                </ul>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <p className="flex items-center gap-2 font-semibold text-blue-800 mb-1">
+                  <Bell className="w-4 h-4" />
+                  Working &amp; coming soon (Round 2+)
+                </p>
+                <ul className="list-disc list-inside text-blue-900 space-y-1">
+                  <li>AI-assisted risk engine on DIGIPIN-style grids running on Firebase Cloud Functions</li>
+                  <li>Automated alerts &amp; grid heatmaps computed in the backend</li>
+                  <li>SMS / low-connectivity entry &amp; responder module integrated via HTTP Functions</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col sm:flex-row justify-end gap-3 text-sm">
+              <button
+                onClick={() => setShowPrototypeModal(false)}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-50"
+              >
+                Continue to prototype
+              </button>
+              <button
+                onClick={handleViewDetails}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-blue-900 text-white hover:bg-blue-800 flex items-center justify-center gap-1"
+              >
+                View details
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className={`bg-white sticky top-0 z-50 transition-all duration-300 ${
         scrolled ? 'shadow-xl' : 'shadow-md'
@@ -144,6 +221,9 @@ export default function IndraLanding() {
 
       {/* Current Scope */}
       <ScopeSection />
+
+      {/* Prototype status & roadmap */}
+      <PrototypeStatusSection />
 
       {/* CTA */}
       <CTASection scrollToSection={scrollToSection} />
@@ -555,6 +635,87 @@ function ScopeSection() {
             </p>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function PrototypeStatusSection() {
+  const [ref, isVisible] = useInView();
+
+  return (
+    <section
+      id="prototype-status"
+      ref={ref}
+      className="py-20 bg-slate-50 border-t border-slate-200"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          className={`max-w-3xl mx-auto text-center mb-10 transition-all duration-700 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+            Prototype phase: what’s live vs coming soon
+          </h2>
+          <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
+            This deployment is a <span className="font-semibold">prototype build</span> for the hackathon. It shows the full
+            end-to-end wiring, while some backend automation and AI pieces are intentionally disabled until Round 2.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          <div className="bg-white border border-green-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-9 w-9 flex items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="w-5 h-5 text-green-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Available now in this prototype</h3>
+            </div>
+            <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
+              <li>Citizen sign-in, incident reporting, and real-time "My Reports" updates</li>
+              <li>Operator and admin dashboards with role-based access guardrails</li>
+              <li>Real-time wiring via Firebase Auth + Firestore listeners</li>
+              <li>Conceptual DIGIPIN-inspired grids visualised through reports &amp; summaries</li>
+              <li>Cloud Functions code scaffolded but not deployed (risk engine &amp; approvals)</li>
+            </ul>
+          </div>
+
+          <div className="bg-white border border-blue-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-9 w-9 flex items-center justify-center rounded-full bg-blue-100">
+                <Radio className="w-5 h-5 text-blue-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Under development / coming in Round 2</h3>
+            </div>
+            <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
+              <li>AI-assisted risk engine on Firebase Cloud Functions scoring each report per grid</li>
+              <li>Automated alerting pipeline (entering high-risk grids, new critical hotspots)</li>
+              <li>Interactive grid heatmaps and map overlays for operators</li>
+              <li>SMS / low-connectivity reporting and responder / NGO modules</li>
+            </ul>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm md:col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-9 w-9 flex items-center justify-center rounded-full bg-slate-100">
+                <Shield className="w-5 h-5 text-slate-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Planned production hardening (post-hackathon)</h3>
+            </div>
+            <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
+              <li>Stricter Firestore security rules and end-to-end audit logging</li>
+              <li>Load and cost testing of Cloud Functions + Firestore read/write patterns</li>
+              <li>Operational dashboards and monitoring for incident volume and system health</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <p className="mt-8 text-xs md:text-sm text-gray-500 max-w-3xl mx-auto text-center">
+          The goal of this prototype is to demonstrate the originality of the architecture, real-time wiring between citizen,
+          operator, and admin apps, and how the DIGIPIN-inspired grid + AI risk engine will work once fully enabled.
+        </p>
       </div>
     </section>
   );

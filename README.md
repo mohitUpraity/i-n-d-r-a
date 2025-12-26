@@ -223,4 +223,61 @@ Automation will be enabled in Round 2 once billing is active.
 
 **INDRA is designed to be built incrementally, responsibly, and in close alignment with real governance needs.**
 
+---
+
+## 16. Future Risk Model & Operator Workflows (Round 2 / Production)
+
+This section sketches the **planned** grid-wise risk model and operator workflows for **Round 2 / production**. These capabilities are **not implemented in the current Round 1 prototype** and are documented here as forward-looking design only.
+
+### 16.1 Grid-Wise Risk Calculation (Hazard × Exposure × Vulnerability)
+
+Each decision grid (inspired by DIGIPIN / geospatial zoning) stores core attributes like population, buildings, critical infrastructure, terrain, historical incidents, and access.
+
+A simple and explainable risk model is used:
+- **Hazard (H):** intensity and likelihood of events (e.g., rainfall, floodplain, river level, landslide-prone slopes, seismic zone).
+- **Exposure (E):** what can be damaged (population, buildings, critical infrastructure, economic activity).
+- **Vulnerability (V):** how fragile the exposed elements are (construction quality, socio-economic indicators, access to health care, past impact).
+
+These are normalized (e.g., 0–1 or 0–100) and combined into grid-level risk scores, per hazard and as a multi-hazard index:
+- Example: `RiskScore = wH * H + wE * E + wV * V` (weights tunable per state/region).
+
+This risk model is designed to be **configurable per state**, so other regions (coastal, plains, urban) can plug in their own hazard indicators and weights without changing the core engine.
+
+### 16.3 Operator Dashboard – Before / During / After Disaster
+
+INDRA’s operator view is intentionally split into three modes, all powered by the same grid-wise risk model and data store:
+
+1. **Before (Preparedness):**
+   - Map of grids color-coded by baseline risk (per hazard type).
+   - Filters by state/district/block, hazard, and risk band.
+   - Tools to identify "top N" high-risk grids with poor access, weak infrastructure, or high vulnerability.
+   - Views to plan road maintenance, retrofitting (schools, hospitals), and pre-positioning of teams and supplies.
+
+2. **During (Response):**
+   - Live overlay of active hazard/impact (e.g., floods, landslides, road blocks) on top of the risk grid.
+   - Priority lists of grids computed from risk, real-time impact, accessibility, and estimated population affected.
+   - Resource allocation panel to assign teams, vehicles, machinery, and relief materials to grids or clusters.
+   - Status tracking for each grid (unassessed, assessment in progress, rescue needed, stable) and for each deployed resource.
+
+3. **After (Recovery & Reconstruction):**
+   - Damage and loss logging per grid (houses, public buildings, roads/bridges, crops, etc.).
+   - Estimated monetary loss and cost of repair/rebuild per grid and per district/block.
+   - A reconstruction priority index based on population affected, criticality of infrastructure, access role (choke points), vulnerability, and cost–benefit.
+   - Funding views that compare estimated reconstruction need to available budgets and schemes.
+
+### 16.4 Resource Planning & Prioritization Logic
+
+Within this framework, the system can:
+- Suggest which grids to secure or build first after a disaster using a transparent composite score (population affected, infra criticality, access role, vulnerability, and relative cost).
+- Recommend resource packages (number of teams, machinery, medical and relief units) per grid or cluster, adjusted for hazard type and accessibility.
+- Support **before/during/after** planning for resource allocation, from pre-positioning in high-risk Himalayan valleys to long-term reconstruction timelines.
+
+### 16.5 Scaling Beyond Himalayan States
+
+The design assumes from the start that:
+- Grids, hazard indicators, and risk weights are **configuration**, not hard-coded logic.
+- Each state/region can run in a logically separate workspace with its own data layers and policies, while sharing the same core risk engine and dashboards.
+- Additional hazards (e.g., cyclones, coastal flooding, heatwaves) can be plugged in by defining new hazard indicators and weights, without rewriting the platform.
+
+This makes it possible to start with a production-grade deployment in selected Himalayan districts and then scale INDRA to other states and regions by primarily adjusting configuration, data connectors, and governance rules.
 
