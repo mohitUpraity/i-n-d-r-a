@@ -243,136 +243,7 @@ export default function AuthCitizen() {
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-green-600">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name - Only for Signup */}
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  placeholder="Enter your full name"
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
-                    errors.fullName
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 focus:border-green-500'
-                  }`}
-                />
-                {errors.fullName && (
-                  <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.fullName}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="you@example.com"
-                  className={`w-full pl-11 pr-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
-                    errors.email
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 focus:border-green-500'
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.email}
-                </p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder={isLogin ? 'Enter your password' : 'At least 8 characters'}
-                  className={`w-full pl-11 pr-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
-                    errors.password
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 focus:border-green-500'
-                  }`}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.password}
-                </p>
-              )}
-            </div>
-
-            {/* Confirm Password - Only for Signup */}
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    placeholder="Confirm your password"
-                    className={`w-full pl-11 pr-4 py-3 rounded-lg border-2 transition-colors focus:outline-none ${
-                      errors.confirmPassword
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 focus:border-green-500'
-                    }`}
-                  />
-                </div>
-                {errors.confirmPassword && (
-                  <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {errors.general && (
-              <p className="text-red-600 text-sm mt-1 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errors.general}
-              </p>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-linear-to-r from-green-600 to-emerald-600 text-white font-bold py-3 rounded-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 hover:scale-105"
-            >
-              {loading ? 'Processing...' : isLogin ? 'Sign In' : 'Create Account'}
-            </button>
-          </form>
+          
 
           {/* Divider */}
           <div className="relative my-6">
@@ -380,7 +251,7 @@ export default function AuthCitizen() {
               <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">or continue with</span>
+              <span className="px-2 bg-white text-gray-500"> continue with</span>
             </div>
           </div>
 
@@ -397,7 +268,7 @@ export default function AuthCitizen() {
           <div className="text-center mt-2 text-sm text-gray-500">If the Google popup is blocked, please allow popups in your browser and try again.</div>
 
           {/* Toggle Login/Signup */}
-          <div className="text-center mt-6 text-gray-600">
+          {/* <div className="text-center mt-6 text-gray-600">
             {isLogin ? (
               <>
                 Don't have an account?{' '}
@@ -425,7 +296,7 @@ export default function AuthCitizen() {
                 </button>
               </>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Back to Home */}

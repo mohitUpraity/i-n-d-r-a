@@ -6,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import Loader from './Loader';
 import { DEV_HARDCODED_ADMIN_UID } from '../../lib/config';
 
-export default function ProtectedRoute({ children, redirectTo = '/auth/citizen', requiredRole = null }) {
+export default function ProtectedRoute({ children, redirectTo = '/', requiredRole = null }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [authorized, setAuthorized] = useState(false);
