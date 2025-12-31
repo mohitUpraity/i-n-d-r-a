@@ -1,9 +1,9 @@
 # INDRA – Intelligent National Disaster, Resource & Action Platform
 
 ## Hackathon Round: The Nest (Online)
-Theme - Governance (Build anything for the Govt)
+#### Theme - Governance (Build anything for the Govt)
 
-** Deployed Live Link --
+#### Deployed Live Link --
 https://i-n-d-r-a.web.app/
 
 
@@ -284,6 +284,7 @@ The design assumes from the start that:
 - Additional hazards (e.g., cyclones, coastal flooding, heatwaves) can be plugged in by defining new hazard indicators and weights, without rewriting the platform.
 
 This makes it possible to start with a production-grade deployment in selected Himalayan districts and then scale INDRA to other states and regions by primarily adjusting configuration, data connectors, and governance rules.
+
 
 
 
