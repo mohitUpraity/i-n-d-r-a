@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Clock, FileText, MapPin } from 'lucide-react';
-import Loader from '../../src/components/Loader';
+import Loader from '../../components/Loader';
 
 export default function ReportView() {
   const { id } = useParams();

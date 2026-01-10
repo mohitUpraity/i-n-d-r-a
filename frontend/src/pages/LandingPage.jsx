@@ -18,7 +18,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import IndraLogoImg from "../src/assets/indra-logo-png.png";
+import IndraLogoImg from "../assets/indra-logo-png.png";
 
 function IndraLogo({ className = "w-6 h-6", rounded = "rounded-lg" }) {
   return (

@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { Navigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import Loader from './Loader';
-import { DEV_HARDCODED_ADMIN_UID } from '../../lib/config';
+import { DEV_HARDCODED_ADMIN_UID } from '../lib/config';
 
 export default function ProtectedRoute({ children, redirectTo = '/', requiredRole = null }) {
   const [loading, setLoading] = useState(true);
