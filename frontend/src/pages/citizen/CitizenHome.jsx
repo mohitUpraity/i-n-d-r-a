@@ -218,10 +218,22 @@ export default function CitizenHome() {
             <div className="sm:col-span-3">
               <button
                 onClick={handleFindNearby}
-                className="w-full h-16 flex items-center justify-center gap-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-semibold hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-300"
+                className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-1 shadow-lg hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <MapPin className="w-5 h-5" />
-                Find Reports Near Me (5km)
+                <div className="relative flex items-center justify-between bg-white/10 px-6 py-4 rounded-lg hover:bg-white/15 transition-colors">
+                  <div className="flex items-start gap-4 text-left">
+                    <div className="bg-white/20 p-3 rounded-full shrink-0">
+                      <MapPin className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white">Verify Alerts Near You</h3>
+                      <p className="text-blue-100 text-sm mt-0.5">Help authorities prioritize by confirming incidents in real-time.</p>
+                    </div>
+                  </div>
+                  <div className="bg-white text-blue-700 px-4 py-2 rounded-full text-sm font-bold shadow-sm group-hover:bg-blue-50 transition-colors">
+                    Start Now &rarr;
+                  </div>
+                </div>
               </button>
             </div>
           </div>

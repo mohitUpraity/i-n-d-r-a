@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Filter, Navigation, AlertTriangle, Shield, CheckCircle, Clock } from 'lucide-react';
-import { getNearbyReports } from '../../lib/reports';
+import { MapPin, Filter, Navigation, AlertTriangle, Shield, CheckCircle, Clock, ThumbsUp, ThumbsDown, HelpCircle, Activity } from 'lucide-react';
+import { getNearbyReports, voteOnReport } from '../../lib/reports';
+import { auth } from '../../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 
 export default function NearbyReports() {
@@ -32,7 +33,9 @@ export default function NearbyReports() {
 
         try {
           const docs = await getNearbyReports(latitude, longitude, radius);
-          setReports(docs);
+          // Filter out reports created by the current user
+          const filteredDocs = docs.filter(doc => doc.citizenId !== auth.currentUser?.uid);
+          setReports(filteredDocs);
         } catch (err) {
           console.error("Failed to fetch nearby reports", err);
           // If permission error persists
@@ -66,6 +69,42 @@ export default function NearbyReports() {
     }
   }, [radius]);
 
+  const handleVote = async (e, reportId, voteType) => {
+    e.stopPropagation(); // Prevent card click
+    
+    // Find report
+    const report = reports.find(r => r.id === reportId);
+    if (!report) return;
+
+    // Check if already voted (Client side check for immediate feedback)
+    const uid = auth.currentUser.uid;
+    if (report.voters && report.voters[uid]) {
+      alert("You have already voted on this report.");
+      return;
+    }
+
+    try {
+      const result = await voteOnReport(reportId, voteType);
+      
+      // Optimistic update
+      setReports(prev => prev.map(r => {
+        if (r.id === reportId) {
+          return {
+            ...r,
+            yesCount: result.yesCount,
+            noCount: result.noCount,
+            confidenceLevel: result.confidenceLevel,
+            voters: { ...r.voters, [uid]: voteType }
+          };
+        }
+        return r;
+      }));
+    } catch (err) {
+      console.error("Failed to vote", err);
+      alert("Vote failed: " + err.message);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch(status) {
       case 'submitted': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -79,6 +118,14 @@ export default function NearbyReports() {
     if (status === 'submitted') return 'Unverified';
     if (status === 'reviewed') return 'Verified';
     return status;
+  };
+
+  const getConfidenceBadge = (level) => {
+    switch(level) {
+      case 'high': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">High Confidence</span>;
+      case 'medium': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Medium Confidence</span>;
+      default: return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">Low Confidence</span>;
+    }
   };
 
   return (
@@ -103,6 +150,13 @@ export default function NearbyReports() {
             >
               Close
             </button>
+          </div>
+
+          <div className="mb-4 bg-blue-50 border border-blue-100 rounded-lg p-3 flex gap-3 text-sm text-blue-800">
+             <Shield className="w-5 h-5 shrink-0 text-blue-600" />
+             <p>
+               <strong>Ethical Note:</strong> Your verifications help authorities prioritize resources. This tool does not replace official emergency services. In immediate danger, always call 112.
+             </p>
           </div>
 
           {/* Controls */}
@@ -167,10 +221,14 @@ export default function NearbyReports() {
 
         {/* Results Grid */}
         <div className="grid gap-4">
-          {reports.map((report) => (
+          {reports.map((report) => {
+             const uid = auth.currentUser?.uid;
+             const hasVoted = report.voters && report.voters[uid];
+             
+             return (
             <div 
               key={report.id} 
-              className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative"
               onClick={() => navigate(`/reports/${report.id}`)}
             >
               <div className="flex items-start justify-between mb-2">
@@ -180,14 +238,12 @@ export default function NearbyReports() {
                       {report.status === 'submitted' && <Clock className="w-3 h-3 mr-1" />}
                       {getStatusLabel(report.status)}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {report.distanceInKm < 1 
-                        ? `${(report.distanceInKm * 1000).toFixed(0)}m away` 
-                        : `${report.distanceInKm.toFixed(1)}km away`}
-                    </span>
+                    {getConfidenceBadge(report.confidenceLevel)}
                 </div>
-                <span className="text-xs text-gray-400">
-                  {report.category || 'General'}
+                <span className="text-xs text-gray-500">
+                  {report.distanceInKm < 1 
+                    ? `${(report.distanceInKm * 1000).toFixed(0)}m away` 
+                    : `${report.distanceInKm.toFixed(1)}km away`}
                 </span>
               </div>
 
@@ -198,12 +254,48 @@ export default function NearbyReports() {
                 {report.description}
               </p>
 
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t">
-                <span>{report.locationText}</span>
-                <span className="text-blue-600 font-medium">View Details &rarr;</span>
+              {/* Action Bar */}
+              <div className="flex items-center justify-between pt-3 border-t">
+                 <div className="flex items-center gap-2">
+                    {/* Confirm Button */}
+                    <button 
+                      onClick={(e) => handleVote(e, report.id, 'yes')}
+                      disabled={hasVoted}
+                      className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors border ${
+                        hasVoted 
+                         ? 'text-gray-400 border-transparent cursor-not-allowed' 
+                         : 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100'
+                      }`}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      Confirm
+                      {report.yesCount > 0 && <span className="ml-1 text-xs bg-green-200 px-1 rounded-full text-green-800">{report.yesCount}</span>}
+                    </button>
+
+                    {/* Uncertain Button */}
+                    <button 
+                      onClick={(e) => handleVote(e, report.id, 'no')}
+                      disabled={hasVoted}
+                      className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors border ${
+                        hasVoted 
+                         ? 'text-gray-400 border-transparent cursor-not-allowed' 
+                         : 'text-orange-700 bg-orange-50 border-orange-200 hover:bg-orange-100'
+                      }`}
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                      Uncertain
+                       {report.noCount > 0 && <span className="ml-1 text-xs bg-orange-200 px-1 rounded-full text-orange-800">{report.noCount}</span>}
+                    </button>
+                    
+                    {hasVoted && (
+                       <span className="text-xs text-gray-400 italic ml-2">Thanks for voting</span>
+                    )}
+                 </div>
+
+                 <span className="text-blue-600 text-xs font-medium">View &rarr;</span>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </div>
