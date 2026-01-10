@@ -23,7 +23,32 @@ We adhere to a **"Verification First"** philosophy. Instead of relying on opaque
 
 ---
 
-## 🏗️ 2. System Architecture
+## ⏳ 2. Impact Across the Disaster Lifecycle
+
+INDRA is designed as a **continuous lifecycle management platform**, not just an emergency response tool.
+
+### 🛡️ Phase 1: BEFORE (Prevention & Preparedness)
+
+- **Early Warning:** Citizens report early signs (e.g., "cracks in road", "rising water levels") long before catastrophic failure.
+- **Data-Driven Planning:** Authorities use historical grid data to identify high-risk zones and pre-position resources (ambulances, excavators) where they are most likely needed.
+- **Outcome:** **Saves Infrastructure** by catching localized issues early; **Optimizes Resources** by planning ahead.
+
+### 🚨 Phase 2: DURING (Response & Triage)
+
+- **Instant Triage:** The "Community Verification" score filters out false alarms, allowing operators to focus on verified high-confidence incidents.
+- **Pinpoint Deployment:** Responders are routed to specific 1km² grids, avoiding confusion in remote terrain.
+- **Crowd Safety:** Citizens receive "Nearby Alerts" to avoid active hazard zones.
+- **Outcome:** **Saves Lives** by drastically reducing response latency; **Minimizes Chaos** with unified intelligence.
+
+### 🏗️ Phase 3: AFTER (Recovery & Accountability)
+
+- **Damage Database:** A comprehensive log of all verified incidents serves as the "source of truth" for reconstruction funding.
+- **Audit Trail:** Every report, vote, and operator action is immutable, ensuring transparency in government spending.
+- **Outcome:** **Accelerates Recovery** with clear data on what needs rebuilding.
+
+---
+
+## 🏗️ 3. System Architecture
 
 INDRA is built on a **Serverless Event-Driven Architecture** to ensure high availability and automatic scaling during disaster spikes.
 
@@ -78,7 +103,7 @@ graph TD
 
 ---
 
-## 🔄 3. Data Flow Diagrams (DFD)
+## 🔄 4. Data Flow Diagrams (DFD)
 
 ### Critical Path: Incident Reporting & Verification
 
@@ -110,7 +135,7 @@ sequenceDiagram
 
 ---
 
-## 💾 4. Database Schema
+## 💾 5. Database Schema
 
 Our schema is designed for **read-heavy** operations (millions of views) and **burst-write** scenarios (thousands of reports during a disaster).
 
@@ -145,7 +170,7 @@ erDiagram
 
 ---
 
-## 🚀 5. Scalability & Reliability Strategy
+## 🚀 6. Scalability & Reliability Strategy
 
 Designing for disaster management means designing for **spikes**. Detailed below is our strategy to handle 10x to 100x traffic surges.
 
@@ -171,7 +196,7 @@ Designing for disaster management means designing for **spikes**. Detailed below
 
 ---
 
-## 🛠️ 6. Tech Stack & Implementation Details
+## 🛠️ 7. Tech Stack & Implementation Details
 
 | Component    | Technology                  | Reasoning                                                      |
 | :----------- | :-------------------------- | :------------------------------------------------------------- |
@@ -183,7 +208,7 @@ Designing for disaster management means designing for **spikes**. Detailed below
 
 ---
 
-## 🔮 7. Future Roadmap (Post-Slingshot)
+## 🔮 8. Future Roadmap (Post-Slingshot)
 
 1.  **AI Image Analysis:** Auto-detect severity from uploaded photos (e.g., distinguishing a minor crack from a collapsed bridge).
 2.  **IoT Integration:** Ingest data from river level sensors and seismic monitors directly into the grid risk model.
