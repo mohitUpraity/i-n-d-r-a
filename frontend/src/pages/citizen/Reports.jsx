@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
-import { MapPin, AlertTriangle, Check, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, AlertTriangle, Check, Loader, Navigation } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getIndianStates, getCitiesByState, getLocalities } from '../../lib/locations';
+import { createCitizenReport } from '../../lib/reports';
 
 export default function CitizenReport() {
   const [incidentType, setIncidentType] = useState('');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState(null);
+  
+  // Location State
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [localities, setLocalities] = useState([]);
+  
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedLocality, setSelectedLocality] = useState('');
+  
+  // GPS & Status
+  const [gpsLocation, setGpsLocation] = useState(null); // { lat, lng }
   const [loading, setLoading] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [createdId, setCreatedId] = useState(null);
   const [error, setError] = useState('');
@@ -22,28 +36,59 @@ export default function CitizenReport() {
     { value: 'other', label: 'Other Emergency', icon: '⚠️' }
   ];
 
-  const getLocation = () => {
-    setLoading(true);
-    setError('');
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude.toFixed(6),
-            lng: position.coords.longitude.toFixed(6)
-          });
-          setLoading(false);
-        },
-        (error) => {
-          setError('Could not get your location. Please try again.');
-          setLoading(false);
-        }
-      );
-    } else {
-      setError('Location not available on this device.');
-      setLoading(false);
+  // Load States on Mount
+  useEffect(() => {
+    setStates(getIndianStates());
+  }, []);
+
+  // When State changes, load Cities
+  useEffect(() => {
+    if (selectedState) {
+      setCities(getCitiesByState(selectedState));
+      setSelectedCity('');
+      setLocalities([]);
+      setSelectedLocality('');
     }
+  }, [selectedState]);
+
+  // When City changes, load Localities
+  useEffect(() => {
+    if (selectedCity) {
+      setLocalities(getLocalities(selectedState, selectedCity));
+      setSelectedLocality('');
+    }
+  }, [selectedCity]);
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser');
+      return;
+    }
+    setDetectingLocation(true);
+    setError('');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setGpsLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setDetectingLocation(false);
+      },
+      (err) => {
+        console.error("Error detecting location", err);
+        let msg = 'Unable to retrieve location.';
+        switch(err.code) {
+          case 1: msg = 'Location permission denied. Please enable it in browser settings.'; break;
+          case 2: msg = 'Location unavailable. Check your GPS signal.'; break;
+          case 3: msg = 'Location request timed out. Please try again.'; break;
+          default: msg = 'Unknown location error.';
+        }
+        setError(msg);
+        setDetectingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
   };
 
   const handleSubmit = async () => {
@@ -51,8 +96,16 @@ export default function CitizenReport() {
       setError('Please select what happened');
       return;
     }
-    if (!location) {
-      setError('Please get your location first');
+
+    // Validation: Require State & City (Mandatory)
+    if (!selectedState || !selectedCity) {
+      setError('Please select your State and City');
+      return;
+    }
+
+    // Validation: Require GPS (Mandatory)
+    if (!gpsLocation) {
+      setError('Please click "Use My Current Location" to attach GPS coordinates');
       return;
     }
 
@@ -60,35 +113,36 @@ export default function CitizenReport() {
     setError('');
 
     try {
-      const user = auth.currentUser;
-      const selectedType = incidentTypes.find((t) => t.value === incidentType);
-      const title = selectedType ? selectedType.label : 'Emergency report';
-      const locationText = `${location.lat}, ${location.lng}`;
+      // Construct location text for display
+      let locationText = '';
+      const stateName = states.find(s => s.isoCode === selectedState)?.name || selectedState;
+      
+      // If locality is selected, use it for better readability, otherwise fallback to City + GPS
+      if (selectedLocality) {
+        const localityName = localities.find(l => l.id === selectedLocality)?.name || selectedLocality;
+        locationText = `${localityName}, ${selectedCity}`;
+      } else {
+         // GPS used
+         locationText = `${selectedCity}, GPS: ${gpsLocation.lat.toFixed(4)},${gpsLocation.lng.toFixed(4)}`;
+      }
 
-      // NOTE: For this prototype, we set the initial status directly from the
-      // client. In production, this write should move to a trusted backend
-      // (Cloud Function) so that status and timestamps cannot be forged by a
-      // malicious client. Keeping this logic small and here makes it easy to
-      // lift-and-shift into Cloud Functions later.
-      const payload = {
-        citizenId: user ? user.uid : null,
-        citizenEmail: user?.email || null,
-        title,
-        description: description || '',
+      const docRef = await createCitizenReport({
+        title: incidentTypes.find(t => t.value === incidentType)?.label || 'Emergency',
+        description,
         category: incidentType,
         locationText,
-        status: 'submitted',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+        lat: gpsLocation.lat, // Mandatory now
+        lng: gpsLocation.lng, // Mandatory now
+        state: selectedState, 
+        city: selectedCity
+      });
 
-      const ref = await addDoc(collection(db, 'reports'), payload);
       setLoading(false);
       setSubmitted(true);
-      setCreatedId(ref.id);
+      setCreatedId(docRef.id);
     } catch (err) {
       console.error('Failed to submit report', err);
-      setError('Failed to submit. Please try again later.');
+      setError('Failed to submit. ' + err.message);
       setLoading(false);
     }
   };
@@ -96,7 +150,10 @@ export default function CitizenReport() {
   const handleReset = () => {
     setIncidentType('');
     setDescription('');
-    setLocation(null);
+    setGpsLocation(null);
+    setSelectedState('');
+    setSelectedCity('');
+    setSelectedLocality('');
     setSubmitted(false);
     setError('');
   };
@@ -189,50 +246,89 @@ export default function CitizenReport() {
             </div>
           </div>
 
-          {/* Location */}
+          {/* Location Selection */}
           <div className="mb-6">
             <label className="block text-lg font-semibold text-gray-900 mb-3">
               Where are you?
             </label>
-            {!location ? (
-              <button
-                onClick={getLocation}
-                disabled={loading}
-                className="w-full p-4 border-2 border-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 disabled:opacity-50"
+
+            {/* Region Selection (MANDATORY) */}
+            <div className="space-y-3 mb-4">
+              <p className="text-sm text-gray-600 font-medium">1. Select Region <span className="text-red-500">*</span></p>
+              <select
+                value={selectedState}
+                onChange={(e) => setSelectedState(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
               >
-                <div className="flex items-center justify-center gap-2">
-                  {loading ? (
-                    <>
-                      <Loader className="w-5 h-5 text-blue-600 animate-spin" />
-                      <span className="font-medium text-blue-900">Getting your location...</span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-blue-900">Get My Location</span>
-                    </>
-                  )}
-                </div>
-              </button>
-            ) : (
-              <div className="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="font-medium text-green-900 mb-1">Location Found</p>
-                    <p className="text-sm text-green-700 font-mono">
-                      {location.lat}, {location.lng}
-                    </p>
-                  </div>
-                  <button
-                    onClick={getLocation}
-                    className="text-sm text-green-700 hover:text-green-800 font-medium"
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
+                <option value="">Select State</option>
+                {states.map((s) => (
+                  <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                disabled={!selectedState}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select City</option>
+                {cities.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="border-t border-gray-200 my-4"></div>
+
+            {/* Precise Location (GPS MANDATORY) */}
+            <p className="text-sm text-gray-600 font-medium mb-2">2. Attach GPS Location <span className="text-red-500">*</span></p>
+            
+            {/* GPS Button */}
+            <button
+              onClick={handleDetectLocation}
+              disabled={detectingLocation || gpsLocation}
+              className={`w-full mb-3 p-3 border-2 rounded-lg flex items-center justify-center gap-2 ${
+                gpsLocation
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100'
+              }`}
+            >
+              {detectingLocation ? (
+                 <Loader className="w-5 h-5 animate-spin" />
+              ) : gpsLocation ? (
+                 <Check className="w-5 h-5" />
+              ) : (
+                 <Navigation className="w-5 h-5" />
+              )}
+              <span className="font-medium">
+                {detectingLocation ? 'Detecting...' : gpsLocation ? 'Location Detected (GPS)' : 'Use My Current Location'}
+              </span>
+            </button>
+
+            {gpsLocation && (
+               <div className="text-xs text-center text-gray-500 mb-4 -mt-2">
+                 Lat: {gpsLocation.lat.toFixed(5)}, Lng: {gpsLocation.lng.toFixed(5)}
+               </div>
             )}
+
+             {/* Locality (OPTIONAL) */}
+             <p className="text-sm text-gray-500 font-medium mb-1 mt-4">Locality / Area <span className="text-gray-400 font-normal">(Optional for now)</span></p>
+             <select
+                value={selectedLocality}
+                onChange={(e) => setSelectedLocality(e.target.value)}
+                disabled={!selectedCity || localities.length === 0}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Locality (Optional)</option>
+                {/* Fallback if no localities found for city */}
+                {localities.length === 0 && selectedCity && (
+                   <option value="custom">Other / Type Manually</option>
+                )}
+                {localities.map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
+              </select>
           </div>
 
           {/* Description (Optional) */}
@@ -240,16 +336,13 @@ export default function CitizenReport() {
             <label htmlFor="description" className="block text-lg font-semibold text-gray-900 mb-2">
               More details (optional)
             </label>
-            <p className="text-sm text-gray-600 mb-2">
-              Add any extra information that can help
-            </p>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Example: Two people trapped, near the park entrance..."
-              rows="4"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-base"
+              placeholder="Example: Near the park entrance..."
+              rows="3"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
             />
           </div>
 
@@ -270,7 +363,7 @@ export default function CitizenReport() {
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-4">
-            For life-threatening emergencies, call 911
+            For life-threatening emergencies, call 112
           </p>
         </div>
       </div>

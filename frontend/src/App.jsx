@@ -12,6 +12,7 @@ import OperatorDashboard from './pages/operator/OperatorDashboard';
 import ReportView from './pages/citizen/ReportView';
 import OperatorPending from './pages/operator/OperatorPending';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import NearbyReports from './pages/citizen/NearbyReports';
 
 const App = () => {
   // ensure auth persistence is configured
@@ -62,6 +63,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <ReportView />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path='/nearby'
+          element={
+            <ProtectedRoute>
+              <NearbyReports />
             </ProtectedRoute>
           }
         />

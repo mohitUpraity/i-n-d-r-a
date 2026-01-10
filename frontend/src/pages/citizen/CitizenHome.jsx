@@ -3,8 +3,8 @@ import { logOut } from '../../lib/auth';
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { subscribeToCitizenReports } from '../../lib/reports';
-import { Shield, PlusCircle, FileText, User, Phone, AlertTriangle } from 'lucide-react';
+import { subscribeToCitizenReports, getNearbyReports } from '../../lib/reports';
+import { Shield, PlusCircle, FileText, User, Phone, AlertTriangle, MapPin } from 'lucide-react';
 
 export default function CitizenHome() {
   const [user, setUser] = useState(null);
@@ -66,6 +66,10 @@ export default function CitizenHome() {
       console.error('Sign out failed', err);
       setSignOutLoading(false);
     }
+  };
+
+  const handleFindNearby = () => {
+    navigate('/nearby');
   };
 
   const firstName = user?.displayName ? user.displayName.split(' ')[0] : (user?.email ? user.email.split('@')[0] : 'there');
@@ -208,6 +212,16 @@ export default function CitizenHome() {
               >
                 <User className="w-5 h-5" aria-hidden />
                 <div className="text-left">Profile<div className="text-xs text-gray-500">Update contact & safety preferences</div></div>
+              </button>
+            </div>
+
+            <div className="sm:col-span-3">
+              <button
+                onClick={handleFindNearby}
+                className="w-full h-16 flex items-center justify-center gap-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-semibold hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-300"
+              >
+                <MapPin className="w-5 h-5" />
+                Find Reports Near Me (5km)
               </button>
             </div>
           </div>
