@@ -82,7 +82,7 @@ export const subscribeToCitizenReports = (citizenId, callback, errorCallback) =>
   //
   //this check the citizenId and returns the reports of that citizen
   // where is used as condition to filter the reports
-  const q = query(colRef, where('citizenId', '==', citizenId));
+  const q = query(colRef, where('citizenId', '==', citizenId),orderBy('createdAt','desc'));
   // this returns the snapshot of the query
   return onSnapshot(q, callback, errorCallback);
 };
