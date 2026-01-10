@@ -8,7 +8,8 @@ export default function NearbyReports() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState([]);
-  const [permissionError, setPermissionError] = useState(false);
+  const [hiddenCount, setHiddenCount] = useState(0); // Track reports hidden because they are own
+  const [error, setError] = useState(null); // Valid error object or string
   const [radius, setRadius] = useState(5); // Default 5km
   const [gpsCoords, setGpsCoords] = useState(null);
 
@@ -24,7 +25,8 @@ export default function NearbyReports() {
     }
 
     setLoading(true);
-    setPermissionError(false);
+    setError(null);
+    setHiddenCount(0);
     
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -34,14 +36,14 @@ export default function NearbyReports() {
         try {
           const docs = await getNearbyReports(latitude, longitude, radius);
           // Filter out reports created by the current user
-          const filteredDocs = docs.filter(doc => doc.citizenId !== auth.currentUser?.uid);
+          const ownUid = auth.currentUser?.uid;
+          const filteredDocs = docs.filter(doc => doc.citizenId !== ownUid);
+          
+          setHiddenCount(docs.length - filteredDocs.length);
           setReports(filteredDocs);
         } catch (err) {
           console.error("Failed to fetch nearby reports", err);
-          // If permission error persists
-          if (err.code === 'permission-denied') {
-             setPermissionError(true);
-          }
+          setError(err.message || "Failed to fetch reports");
         } finally {
           setLoading(false);
         }
@@ -51,12 +53,12 @@ export default function NearbyReports() {
         setLoading(false);
         let msg = 'Could not access location.';
         switch(err.code) {
-          case 1: msg = 'Location permission denied. Please enable it in browser settings.'; setPermissionError(true); break;
+          case 1: msg = 'Location permission denied. Please enable it in browser settings.'; break;
           case 2: msg = 'Location unavailable. Check GPS signal.'; break;
           case 3: msg = 'Location request timed out. Please retry.'; break;
           default: msg = 'Unknown location error.';
         }
-        if (err.code !== 1) alert(msg); 
+        setError(msg);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
@@ -196,26 +198,33 @@ export default function NearbyReports() {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {permissionError && (
+        {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 flex items-start gap-3">
              <AlertTriangle className="w-5 h-5 shrink-0" />
              <div>
-               <p className="font-bold">Access Denied</p>
-               <p className="text-sm">We couldn't load the reports. This is usually a temporary security setting. Please try again in 1 minute.</p>
+               <p className="font-bold">Error Loading Reports</p>
+               <p className="text-sm">{error}</p>
              </div>
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && reports.length === 0 && !permissionError && (
+        {!loading && reports.length === 0 && !error && (
           <div className="text-center py-12">
             <div className="inline-block p-4 bg-gray-100 rounded-full mb-4">
               <MapPin className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900">No reports found nearby</h3>
-            <p className="text-gray-500 mt-2 max-w-xs mx-auto">
+            <p className="text-gray-500 mt-2 max-w-xs mx-auto mb-4">
               We couldn't find any incidents within {radius}km of your location.
             </p>
+            {hiddenCount > 0 && (
+                <div className="bg-blue-50 text-blue-800 px-4 py-2 rounded-lg text-sm inline-block">
+                    Note: {hiddenCount} reports were hidden because you created them.
+                    <br/>
+                    (You can view your own reports in your Profile)
+                </div>
+            )}
           </div>
         )}
 

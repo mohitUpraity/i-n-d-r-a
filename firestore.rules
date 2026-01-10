@@ -47,14 +47,13 @@ service cloud.firestore {
       // Citizens can create reports
       allow create: if isCitizen();
 
-      // Citizen can read ONLY their own reports
-      allow read: if isCitizen() && resource.data.citizenId == request.auth.uid;
+      // authenticated users can read all reports
+      allow read: if isSignedIn();
 
-      // Operators and admins can read ALL reports
-      allow read: if isOperator() || isAdmin();
-
-      // Operators and admins can update report status
-      allow update: if isOperator() || isAdmin();
+      // Operator/Admin can update status. Citizens can vote (which updates the doc).
+      // We allow citizens to update, but ensure they can't change the status 
+      // (status must remain same as before for citizens)
+      allow update: if isOperator() || isAdmin() || (isCitizen() && request.resource.data.status == resource.data.status);
 
       allow delete: if false;
     }
