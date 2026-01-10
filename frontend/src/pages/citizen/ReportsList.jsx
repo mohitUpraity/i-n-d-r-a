@@ -3,7 +3,7 @@ import { auth } from '../../lib/firebase';
 import { subscribeToCitizenReports } from '../../lib/reports';
 import { useNavigate } from 'react-router-dom';
 import { Clock, AlertTriangle, FileText } from 'lucide-react';
-import Loader from '../../src/components/Loader';
+import Loader from '../../components/Loader';
 
 export default function ReportsList() {
   const [reports, setReports] = useState([]);

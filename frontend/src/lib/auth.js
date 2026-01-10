@@ -12,6 +12,13 @@ import { auth } from './firebase';
 
 const provider = new GoogleAuthProvider();
 
+// SCALABILITY NOTE:
+// This file handles client-side auth.
+// FUTURE MIGRATION:
+// If you need to manage sessions securely server-side (e.g. for SSR with Next.js),
+// you would use the Firebase Admin SDK to verify ID tokens and set session cookies.
+// For now, client-side persistence is sufficient and scalable for SPAs.
+
 export const initAuthPersistence = async () => {
   try {
     await setPersistence(auth, browserLocalPersistence);

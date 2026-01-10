@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
-import Loader from '../../src/components/Loader';
+import Loader from '../../components/Loader';
 
 export default function AdminDashboard() {
   const [requests, setRequests] = useState([]);

@@ -1,22 +1,22 @@
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import AuthCitizen from '../pages/citizen/Auth-Citizen';
-import AuthOperator from '../pages/operator/Auth-Operator';
-import AuthAdmin from '../pages/admin/Auth-Admin';
-import IndraLanding from '../pages/LandingPage';
+import AuthCitizen from './pages/citizen/Auth-Citizen';
+import AuthOperator from './pages/operator/Auth-Operator';
+import AuthAdmin from './pages/admin/Auth-Admin';
+import IndraLanding from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import CitizenHome from '../pages/citizen/CitizenHome';
-import ReportCreate from '../pages/citizen/Reports';
-import ReportsList from '../pages/citizen/ReportsList';
-import OperatorDashboard from '../pages/operator/OperatorDashboard';
-import ReportView from '../pages/citizen/ReportView';
-import OperatorPending from '../pages/operator/OperatorPending';
-import AdminDashboard from '../pages/admin/AdminDashboard';
+import CitizenHome from './pages/citizen/CitizenHome';
+import ReportCreate from './pages/citizen/Reports';
+import ReportsList from './pages/citizen/ReportsList';
+import OperatorDashboard from './pages/operator/OperatorDashboard';
+import ReportView from './pages/citizen/ReportView';
+import OperatorPending from './pages/operator/OperatorPending';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 const App = () => {
   // ensure auth persistence is configured
   useEffect(() => {
-    import('../lib/auth').then(mod => {
+    import('./lib/auth').then(mod => {
       if (mod && mod.initAuthPersistence) mod.initAuthPersistence();
     }).catch(err => console.warn('Could not init auth persistence', err));
   }, []);
