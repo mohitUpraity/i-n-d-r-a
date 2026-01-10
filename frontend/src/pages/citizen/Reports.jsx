@@ -27,13 +27,39 @@ export default function CitizenReport() {
   const [error, setError] = useState('');
 
   const incidentTypes = [
-    { value: 'fire', label: 'Fire', icon: '🔥' },
-    { value: 'flood', label: 'Flood or Water', icon: '💧' },
-    { value: 'injury', label: 'Person Injured', icon: '🚑' },
-    { value: 'blocked', label: 'Road Blocked', icon: '🚧' },
-    { value: 'power', label: 'No Power', icon: '⚡' },
-    { value: 'building', label: 'Building Damage', icon: '🏚️' },
-    { value: 'other', label: 'Other Emergency', icon: '⚠️' }
+    // Emergency & Safety
+    { value: 'fire', label: 'Fire', icon: '🔥', category: 'emergency' },
+    { value: 'flood', label: 'Flood or Water Logging', icon: '💧', category: 'emergency' },
+    { value: 'injury', label: 'Person Injured', icon: '🚑', category: 'emergency' },
+    { value: 'accident', label: 'Road Accident', icon: '🚗', category: 'emergency' },
+    { value: 'building-collapse', label: 'Building Collapse/Damage', icon: '🏚️', category: 'emergency' },
+    
+    // Natural Disasters & Geological (Himalayan Region)
+    { value: 'landslide', label: 'Landslide', icon: '⛰️', category: 'natural-disaster' },
+    { value: 'avalanche', label: 'Avalanche', icon: '🏔️', category: 'natural-disaster' },
+    { value: 'rockfall', label: 'Rockfall/Boulder', icon: '🪨', category: 'natural-disaster' },
+    { value: 'earthquake', label: 'Earthquake', icon: '🌍', category: 'natural-disaster' },
+    { value: 'cloudburst', label: 'Cloudburst/Heavy Rain', icon: '⛈️', category: 'natural-disaster' },
+    
+    // Infrastructure
+    { value: 'road-damage', label: 'Road Damage/Pothole', icon: '🚧', category: 'infrastructure' },
+    { value: 'road-blocked', label: 'Road Blocked', icon: '⛔', category: 'infrastructure' },
+    { value: 'water-leakage', label: 'Water Leakage/Pipe Burst', icon: '💦', category: 'infrastructure' },
+    { value: 'drainage-blocked', label: 'Drainage Blocked', icon: '🚰', category: 'infrastructure' },
+    { value: 'street-light', label: 'Street Light Not Working', icon: '💡', category: 'infrastructure' },
+    
+    // Utilities
+    { value: 'power-outage', label: 'Power Outage', icon: '⚡', category: 'utilities' },
+    { value: 'water-supply', label: 'No Water Supply', icon: '🚱', category: 'utilities' },
+    { value: 'gas-leak', label: 'Gas Leak', icon: '⛽', category: 'utilities' },
+    
+    // Environment & Sanitation
+    { value: 'garbage', label: 'Garbage Not Collected', icon: '🗑️', category: 'sanitation' },
+    { value: 'stray-animals', label: 'Stray Animals', icon: '🐕', category: 'sanitation' },
+    { value: 'tree-fallen', label: 'Tree Fallen', icon: '🌳', category: 'environment' },
+    
+    // Other
+    { value: 'other', label: 'Other Issue', icon: '⚠️', category: 'other' }
   ];
 
   // Load States on Mount
@@ -223,26 +249,151 @@ export default function CitizenReport() {
           {/* Incident Type */}
           <div className="mb-6">
             <label className="block text-lg font-semibold text-gray-900 mb-3">
-              What happened?
+              What happened? <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {incidentTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => {
-                    setIncidentType(type.value);
-                    setError('');
-                  }}
-                  className={`p-4 border-2 rounded-lg text-left ${
-                    incidentType === type.value
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{type.icon}</div>
-                  <div className="font-medium text-gray-900">{type.label}</div>
-                </button>
-              ))}
+            
+            {/* Emergency & Safety */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Emergency & Safety</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {incidentTypes.filter(t => t.category === 'emergency').map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      setIncidentType(type.value);
+                      setError('');
+                    }}
+                    className={`p-3 border-2 rounded-lg text-left transition-all ${
+                      incidentType === type.value
+                        ? 'border-red-600 bg-red-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Natural Disasters & Geological */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Natural Disasters & Geological</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {incidentTypes.filter(t => t.category === 'natural-disaster').map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      setIncidentType(type.value);
+                      setError('');
+                    }}
+                    className={`p-3 border-2 rounded-lg text-left transition-all ${
+                      incidentType === type.value
+                        ? 'border-orange-600 bg-orange-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Infrastructure */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Infrastructure</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {incidentTypes.filter(t => t.category === 'infrastructure').map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      setIncidentType(type.value);
+                      setError('');
+                    }}
+                    className={`p-3 border-2 rounded-lg text-left transition-all ${
+                      incidentType === type.value
+                        ? 'border-blue-600 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Utilities */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Utilities</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {incidentTypes.filter(t => t.category === 'utilities').map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      setIncidentType(type.value);
+                      setError('');
+                    }}
+                    className={`p-3 border-2 rounded-lg text-left transition-all ${
+                      incidentType === type.value
+                        ? 'border-blue-600 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Environment & Sanitation */}
+            <div className="mb-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Environment & Sanitation</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {incidentTypes.filter(t => t.category === 'sanitation' || t.category === 'environment').map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      setIncidentType(type.value);
+                      setError('');
+                    }}
+                    className={`p-3 border-2 rounded-lg text-left transition-all ${
+                      incidentType === type.value
+                        ? 'border-blue-600 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Other */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Other</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {incidentTypes.filter(t => t.category === 'other').map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => {
+                      setIncidentType(type.value);
+                      setError('');
+                    }}
+                    className={`p-3 border-2 rounded-lg text-left transition-all ${
+                      incidentType === type.value
+                        ? 'border-blue-600 bg-blue-50 shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{type.icon}</div>
+                    <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -302,7 +453,7 @@ export default function CitizenReport() {
                  <Navigation className="w-5 h-5" />
               )}
               <span className="font-medium">
-                {detectingLocation ? 'Detecting...' : gpsLocation ? 'Location Detected (GPS)' : 'Use My Current Location'}
+                {detectingLocation ? 'Detecting Location...' : gpsLocation ? 'Location Detected ✓' : 'Use My Current Location'}
               </span>
             </button>
 

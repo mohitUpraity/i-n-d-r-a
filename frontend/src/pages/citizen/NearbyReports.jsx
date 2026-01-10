@@ -131,24 +131,24 @@ export default function NearbyReports() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-50 rounded-full">
-                <MapPin className="w-6 h-6 text-blue-600" />
+      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-linear-to-br from-blue-600 to-indigo-700 p-2 rounded-lg shadow-sm">
+                <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Nearby Activity</h1>
-                <p className="text-xs text-gray-500">Real-time reports around you</p>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">Nearby Activity</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Community-verified reports around you</p>
               </div>
             </div>
             
             <button 
               onClick={() => navigate('/citizen/home')}
-              className="text-sm text-gray-600 font-medium hover:text-gray-900"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Close
+              ← <span className="hidden sm:inline">Back to Home</span><span className="sm:inline md:hidden">Back</span>
             </button>
           </div>
 
@@ -191,10 +191,10 @@ export default function NearbyReports() {
              </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         {permissionError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 flex items-start gap-3">

@@ -241,6 +241,20 @@ export default function AuthCitizen() {
           </p>
         </div>
 
+        {/* Role Explanation */}
+        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
+          <h3 className="font-bold text-green-900 mb-2 flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            Citizen Role
+          </h3>
+          <ul className="text-sm text-green-800 space-y-1">
+            <li>✓ Report incidents (24 categories)</li>
+            <li>✓ Verify nearby reports to help authorities</li>
+            <li>✓ Track your report status in real-time</li>
+            <li>✓ <strong>No approval needed</strong> - instant access!</li>
+          </ul>
+        </div>
+
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-green-600">
           

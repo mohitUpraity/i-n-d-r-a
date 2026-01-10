@@ -71,28 +71,38 @@ export default function ReportsList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="w-7 h-7 text-gray-700" aria-hidden />
-            <div>
-              <div className="text-lg font-bold text-gray-900">My Reports</div>
-              <div className="text-sm text-gray-600">Reports you submitted</div>
+      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-linear-gradient-to-br from-blue-600 to-blue-700 p-2 rounded-lg shadow-sm">
+                <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-white" aria-hidden />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">My Reports</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Track your submitted incidents</p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/report')}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
-            >
-              <AlertTriangle className="w-4 h-4" /> New report
-            </button>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => navigate('/citizen/home')}
+                className="hidden sm:inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                ← Back to Home
+              </button>
+              <button
+                onClick={() => navigate('/report')}
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <AlertTriangle className="w-4 h-4" /> <span className="hidden sm:inline">New Report</span><span className="sm:hidden">New</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">Your recent reports</h2>
           <div className="text-xs text-gray-500 flex items-center gap-2">

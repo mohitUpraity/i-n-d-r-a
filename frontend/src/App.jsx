@@ -6,6 +6,7 @@ import AuthAdmin from './pages/admin/Auth-Admin';
 import IndraLanding from './pages/LandingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import CitizenHome from './pages/citizen/CitizenHome';
+import CitizenProfile from './pages/citizen/CitizenProfile';
 import ReportCreate from './pages/citizen/Reports';
 import ReportsList from './pages/citizen/ReportsList';
 import OperatorDashboard from './pages/operator/OperatorDashboard';
@@ -36,6 +37,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <CitizenHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path='/profile'
+          element={
+            <ProtectedRoute>
+              <CitizenProfile />
             </ProtectedRoute>
           }
         />

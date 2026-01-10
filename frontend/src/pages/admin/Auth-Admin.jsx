@@ -287,6 +287,47 @@ export default function AuthAdmin() {
             </button>
           </form>
 
+          {/* Admin Credentials for Testing */}
+          <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+            <h4 className="font-bold text-yellow-900 mb-2 flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Test Admin Credentials
+            </h4>
+            <div className="text-sm text-yellow-800 space-y-2">
+              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-yellow-200">
+                <p className="font-mono text-xs flex-1">
+                  <strong>Email:</strong> {DEV_HARDCODED_ADMIN_EMAIL}
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(DEV_HARDCODED_ADMIN_EMAIL);
+                    alert('Email copied!');
+                  }}
+                  className="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded text-xs font-semibold transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-yellow-200">
+                <p className="font-mono text-xs flex-1">
+                  <strong>Password:</strong> {DEV_HARDCODED_ADMIN_PASSWORD}
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(DEV_HARDCODED_ADMIN_PASSWORD);
+                    alert('Password copied!');
+                  }}
+                  className="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded text-xs font-semibold transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-yellow-700 mt-2">
+              💡 Use these credentials to access the admin dashboard and approve operator requests.
+            </p>
+          </div>
+
           {/* Toggle Login/Signup */}
           <div className="text-center mt-6 text-gray-600">
             {isLogin ? (

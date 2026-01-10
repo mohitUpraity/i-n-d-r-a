@@ -138,32 +138,25 @@ export default function IndraLanding() {
                   <CheckCircle className="w-4 h-4" />
                   Live in this prototype
                 </p>
-                <ul className="list-disc list-inside text-green-900 space-y-1">
-                  <li>Citizen incident reporting &amp; "My Reports" updates</li>
-                  <li>
-                    Operator &amp; admin dashboards with role-based access
-                  </li>
-                  <li>Real-time wiring via Firebase Auth + Firestore</li>
+                <ul className="list-disc list-inside text-green-900 space-y-1 text-xs sm:text-sm">
+                  <li><strong>24 Incident Categories:</strong> Emergency, Infrastructure, Natural Disasters, Utilities</li>
+                  <li><strong>Community Verification:</strong> Citizens verify nearby incidents to help authorities prioritize</li>
+                  <li><strong>Grid-wise Location:</strong> GPS + State/City for precise mapping</li>
+                  <li><strong>Nearby Incident Tracking:</strong> See & verify reports around you in real-time</li>
+                  <li><strong>Operator Dashboard:</strong> Advanced filtering, triage & status tracking</li>
                 </ul>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
                 <p className="flex items-center gap-2 font-semibold text-blue-800 mb-1">
                   <Bell className="w-4 h-4" />
-                  Working &amp; coming soon (Round 2+)
+                  Roadmap (Next Phase)
                 </p>
-                <ul className="list-disc list-inside text-blue-900 space-y-1">
-                  <li>
-                    AI-assisted risk engine on DIGIPIN-style grids running on
-                    Firebase Cloud Functions
-                  </li>
-                  <li>
-                    Automated alerts &amp; grid heatmaps computed in the backend
-                  </li>
-                  <li>
-                    SMS / low-connectivity entry &amp; responder module
-                    integrated via HTTP Functions
-                  </li>
+                <ul className="list-disc list-inside text-blue-900 space-y-1 text-xs sm:text-sm">
+                  <li>AI Risk Prediction & Grid Heatmaps</li>
+                  <li>Integration with Emergency Services (112)</li>
+                  <li>Offline/SMS reporting for remote areas</li>
+                  <li>Multi-language support (Hindi/Regional)</li>
                 </ul>
               </div>
             </div>
@@ -573,23 +566,23 @@ function HowItWorksSection() {
   const steps = [
     {
       title: "Ground-Level Data Collection",
-      desc: "Citizens and field personnel report incidents through intuitive interface with photos & location data.",
+      desc: "Citizens report incidents across 24 categories (emergencies, infrastructure, natural disasters) with GPS location and photos.",
+    },
+    {
+      title: "Community Verification",
+      desc: "Nearby citizens verify reports through crowd-sourced voting, generating confidence scores to help prioritize genuine incidents.",
     },
     {
       title: "Smart Location Encoding",
-      desc: "Geographic coordinates converted to privacy-preserving grid codes for precise geographic identification.",
-    },
-    {
-      title: "Intelligent Risk Analysis",
-      desc: "AI systems aggregate reports by region, severity, hazard type, and temporal patterns.",
+      desc: "GPS coordinates and State/City data converted to privacy-preserving grid codes for precise geographic identification.",
     },
     {
       title: "Decision Command Center",
-      desc: "Authorities access unified dashboard showing regional risk heatmaps and actionable intelligence.",
+      desc: "Operators access unified dashboard with confidence filters, location data, and real-time status updates for intelligent triage.",
     },
     {
       title: "Coordinated Response",
-      desc: "Authorities assign responders with real-time tracking, status updates, and resource management.",
+      desc: "Authorities assign responders with real-time tracking, status updates, and resource management across all incident types.",
     },
   ];
 
@@ -660,7 +653,7 @@ function StakeholdersSection() {
       color: "from-purple-500 to-pink-500",
       items: [
         "Unified risk intelligence",
-        "Resource optimization",
+        "Nearby alerts for rapid response",
         "Incident tracking & analysis",
         "Decision-making dashboards",
       ],
@@ -670,9 +663,9 @@ function StakeholdersSection() {
       title: "First Responders",
       color: "from-red-500 to-orange-500",
       items: [
-        "Receive priority assignments",
-        "Access precise locations",
-        "Update incident status",
+        "Nearby incident alerts in real-time",
+        "Access precise GPS locations",
+        "Update incident status on-ground",
         "Coordinate across teams",
       ],
     },
@@ -765,10 +758,10 @@ function FeaturesSection() {
       title: "Incident Reporting",
       color: "from-green-500 to-emerald-500",
       items: [
-        "Intuitive mobile interface",
-        "Precise GPS location",
-        "Photo & video support",
-        "Voice reporting enabled",
+        "24 incident categories (Emergency, Infrastructure, Natural Disasters)",
+        "GPS location + State/City selection",
+        "Himalayan hazards (Landslides, Avalanches, Cloudbursts)",
+        "Community verification & confidence scoring",
       ],
     },
     {
@@ -787,9 +780,9 @@ function FeaturesSection() {
       title: "Smart Alerts",
       color: "from-yellow-500 to-amber-500",
       items: [
+        "Nearby incident alerts for authorities",
         "Zone-based notifications",
         "Role-specific messaging",
-        "11 language support",
         "SMS + App delivery",
       ],
     },
@@ -949,11 +942,14 @@ function ScopeSection() {
 
           <div className="bg-blue-50 border-2 border-blue-300 p-6 rounded-lg">
             <h3 className="text-xl font-bold text-gray-900 mb-3">
-              Hazard Coverage
+              Hazard Coverage (24 Categories)
             </h3>
-            <div className="grid sm:grid-cols-2 gap-2 text-gray-700">
-              <div>• Landslides • Road/bridge damage • Flooding</div>
-              <div>• Structural damage • Cold wave • Utility outages</div>
+            <div className="grid sm:grid-cols-2 gap-2 text-sm text-gray-700">
+              <div>• <strong>Natural Disasters:</strong> Landslides, Avalanches, Earthquakes, Cloudbursts, Rockfall</div>
+              <div>• <strong>Emergencies:</strong> Fire, Flood, Accidents, Building Collapse, Injuries</div>
+              <div>• <strong>Infrastructure:</strong> Road Damage, Water Leakage, Drainage, Street Lights</div>
+              <div>• <strong>Utilities:</strong> Power Outage, Water Supply, Gas Leaks</div>
+              <div>• <strong>Environment:</strong> Fallen Trees, Garbage, Stray Animals</div>
             </div>
           </div>
 
@@ -1010,20 +1006,19 @@ function PrototypeStatusSection() {
             </div>
             <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
               <li>
-                Citizen sign-in, incident reporting, and real-time "My Reports"
-                updates
+                <strong>Grid-wise Technology:</strong> DIGIPIN-inspired spatial grids for high-precision location accuracy
               </li>
               <li>
-                Operator and admin dashboards with role-based access guardrails
-              </li>
-              <li>Real-time wiring via Firebase Auth + Firestore listeners</li>
-              <li>
-                Conceptual DIGIPIN-inspired grids visualised through reports
-                &amp; summaries
+                <strong>24 Incident Categories:</strong> Covering emergencies, infrastructure, natural disasters, utilities & environment
               </li>
               <li>
-                Cloud Functions code scaffolded but not deployed (risk engine
-                &amp; approvals)
+                <strong>Nearby Incident Tracking:</strong> Citizens can discover and verify reports around them to help authorities respond
+              </li>
+              <li>
+                <strong>Community Verification:</strong> Confidence scoring system - citizens vote to validate incidents
+              </li>
+              <li>
+                <strong>Operator Dashboard:</strong> Advanced filtering, confidence-based triage & status management
               </li>
             </ul>
           </div>
@@ -1034,21 +1029,19 @@ function PrototypeStatusSection() {
                 <Radio className="w-5 h-5 text-blue-700" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Under development / coming in Round 2
+                Under development / coming in Next Phase
               </h3>
             </div>
             <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
               <li>
-                AI-assisted risk engine on Firebase Cloud Functions scoring each
-                report per grid
+                <strong>AI Grid Analysis:</strong> Predictive modeling for landslide/flood risks at grid level
               </li>
               <li>
-                Automated alerting pipeline (entering high-risk grids, new
-                critical hotspots)
+                Automated alerting pipeline for high-risk grids
               </li>
               <li>Interactive grid heatmaps and map overlays for operators</li>
               <li>
-                SMS / low-connectivity reporting and responder / NGO modules
+                SMS / low-connectivity reporting for remote Himalayan areas
               </li>
             </ul>
           </div>
