@@ -1,5 +1,6 @@
-import { addDoc, collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import * as geofire from 'geofire-common';
 
 // Central place to define the report status lifecycle used across the UI.
 // Keeping this in one file makes it trivial to move the same logic into a
@@ -32,10 +33,18 @@ export const canTransitionStatus = (fromStatus, toStatus) => {
 // it takes in the title, description, category, locationText as parameters
 // it returns the document reference of the created report
 // it can be used in citizen view to create a new report
-export const createCitizenReport = async ({ title, description, category, locationText }) => {
+export const createCitizenReport = async ({ title, description, category, locationText, lat = null, lng = null }) => {
   // on run this function it gets the user
   const user = auth.currentUser;
   if (!user) throw new Error('User must be signed in to create a report');
+
+  // GEOSPATIAL LOGIC (The "Engine"):
+  // If we have Lat/Lng, we calculate the Geohash.
+  // This is what allows us to efficiently query "Radius 5km" later.
+  let geohash = null;
+  if (lat && lng) {
+    geohash = geofire.geohashForLocation([lat, lng]);
+  }
 
   // NOTE: In this prototype, we set the initial status from the client.
   // In a production system, this responsibility should live in a trusted
@@ -51,6 +60,10 @@ export const createCitizenReport = async ({ title, description, category, locati
     description: description.trim(),
     category,
     locationText: locationText.trim(),
+    // Geo fields
+    lat: lat || null,
+    lng: lng || null,
+    geohash: geohash, // The magic key for "Near Me" queries
     status: 'submitted',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -100,6 +113,52 @@ export const subscribeToAllReports = (callback, errorCallback) => {
   const q = query(colRef, orderBy('createdAt', 'desc'));
   // this returns the snapshot of the query
   return onSnapshot(q, callback, errorCallback);
+};
+
+// GEOSPATIAL QUERY (The "Reader"):
+// This function finds reports within X km of a center point.
+// Since Firestore requires multiple queries for this, we return a Promise (one-time fetch)
+// instead of a real-time stream for simplicity in V1.
+export const getNearbyReports = async (centerLat, centerLng, radiusInKm) => {
+  const center = [centerLat, centerLng];
+  const radiusInM = radiusInKm * 1000;
+
+  // 1. Calculate the "bounds" (the list of geohashes we need to search)
+  // detailed explanation: https://firebase.google.com/docs/firestore/solutions/geoqueries
+  const bounds = geofire.geohashQueryBounds(center, radiusInM);
+  const promises = [];
+
+  for (const b of bounds) {
+    const q = query(
+      collection(db, 'reports'),
+      orderBy('geohash'),
+      where('geohash', '>=', b[0]),
+      where('geohash', '<=', b[1])
+    );
+    promises.push(getDocs(q));
+  }
+
+  // 2. Run all queries in parallel
+  const snapshots = await Promise.all(promises);
+  const matchingDocs = [];
+
+  for (const snap of snapshots) {
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      if (data.lat && data.lng) {
+        // 3. Client-side filtering: The query gives us a "Box" around the circle.
+        // We must manually check the exact distance to filter out the corners of the box.
+        const distanceInKm = geofire.distanceBetween([data.lat, data.lng], center);
+        if (distanceInKm <= radiusInKm) {
+          matchingDocs.push({ id: doc.id, ...data, distanceInKm });
+        }
+      }
+    }
+  }
+
+  // Sort by distance (closest first)
+  matchingDocs.sort((a, b) => a.distanceInKm - b.distanceInKm);
+  return matchingDocs;
 };
 
 // this function tracks the current report status and updates it from db from repors collection using reportId and return next status and it is controlled by getNextStatus function thst has hardcoded array of statuses
