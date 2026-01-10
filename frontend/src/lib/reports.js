@@ -33,7 +33,7 @@ export const canTransitionStatus = (fromStatus, toStatus) => {
 // it takes in the title, description, category, locationText as parameters
 // it returns the document reference of the created report
 // it can be used in citizen view to create a new report
-export const createCitizenReport = async ({ title, description, category, locationText, lat = null, lng = null }) => {
+export const createCitizenReport = async ({ title, description, category, locationText, lat = null, lng = null, state = null, city = null }) => {
   // on run this function it gets the user
   const user = auth.currentUser;
   if (!user) throw new Error('User must be signed in to create a report');
@@ -64,6 +64,9 @@ export const createCitizenReport = async ({ title, description, category, locati
     lat: lat || null,
     lng: lng || null,
     geohash: geohash, // The magic key for "Near Me" queries
+    // Administrative fields (for filtering)
+    state,
+    city,
     status: 'submitted',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
