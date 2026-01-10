@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, onSnapshot, orderBy, query, serverTimestamp, updateDoc, where, arrayUnion, arrayRemove, increment, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import * as geofire from 'geofire-common';
 
@@ -68,6 +68,14 @@ export const createCitizenReport = async ({ title, description, category, locati
     state,
     city,
     status: 'submitted',
+    state,
+    city,
+    status: 'submitted',
+    // Community Verification Fields
+    yesCount: 0,
+    noCount: 0, // In UI this is "Uncertain/Not Sure"
+    confidenceLevel: 'low', // low, medium, high
+    voters: {}, // Map of userId -> voteType ('yes'  or 'no')
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -184,4 +192,60 @@ export const updateReportStatus = async (reportId, currentStatus) => {
   });
 
   return nextStatus;
+};
+
+// COMMUNITY VERIFICATION (The "Truth Engine"):
+// Allows users to vote "yes" (confirm) or "no" (uncertain).
+// Handles confidence score calculation.
+export const voteOnReport = async (reportId, voteType) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Must be signed in to verify');
+  if (!['yes', 'no'].includes(voteType)) throw new Error('Invalid vote type');
+
+  const ref = doc(db, 'reports', reportId);
+  const snap = await getDoc(ref);
+  
+  if (!snap.exists()) throw new Error('Report not found');
+  const data = snap.data();
+
+  // Prevent owner from voting
+  if (data.citizenId === user.uid) {
+    throw new Error('You cannot verify your own report');
+  }
+
+  // Check if user already voted
+  const currentVoters = data.voters || {};
+  if (currentVoters[user.uid]) {
+    throw new Error('You have already voted on this report');
+  }
+
+  // Calculate new counts
+  let newYes = data.yesCount || 0;
+  let newNo = data.noCount || 0;
+
+  if (voteType === 'yes') newYes++;
+  else newNo++;
+
+  // Calculate Confidence Level
+  // Logic: Yes increases confidence. No slows it down (doesn't explicitly decrease, but makes the threshold for high harder)
+  // Simple heuristic: 
+  //   High: Yes > 5 AND Yes > No * 2
+  //   Medium: Yes > 2 
+  //   Low: Default
+  let newConfidence = 'low';
+  if (newYes >= 5 && newYes > (newNo * 2)) {
+    newConfidence = 'high';
+  } else if (newYes >= 2) {
+    newConfidence = 'medium';
+  }
+
+  await updateDoc(ref, {
+    [`voters.${user.uid}`]: voteType,
+    yesCount: newYes,
+    noCount: newNo,
+    confidenceLevel: newConfidence,
+    updatedAt: serverTimestamp()
+  });
+
+  return { yesCount: newYes, noCount: newNo, confidenceLevel: newConfidence };
 };
