@@ -15,6 +15,7 @@ export default function OperatorDashboard() {
   const [error, setError] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterConfidence, setFilterConfidence] = useState('all');
 
   useEffect(() => {
     // Subscribe to *all* reports. Operators need a full picture to triage and
@@ -110,9 +111,13 @@ export default function OperatorDashboard() {
   const filteredReports = reports.filter((r) => {
     const status = r.status || 'submitted';
     const category = r.category || 'uncategorized';
+    const confidence = r.confidenceLevel || 'low';
+    
     const statusOk = filterStatus === 'all' || status === filterStatus;
     const categoryOk = filterCategory === 'all' || category === filterCategory;
-    return statusOk && categoryOk;
+    const confidenceOk = filterConfidence === 'all' || confidence === filterConfidence;
+    
+    return statusOk && categoryOk && confidenceOk;
   });
 
   return (
@@ -222,6 +227,20 @@ export default function OperatorDashboard() {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">Confidence</label>
+              <select
+                value={filterConfidence}
+                onChange={(e) => setFilterConfidence(e.target.value)}
+                className="text-xs sm:text-sm border rounded px-2 py-1 bg-white"
+              >
+                <option value="all">All</option>
+                <option value="high">High Confidence</option>
+                <option value="medium">Medium Confidence</option>
+                <option value="low">Low/Unverified</option>
+              </select>
+            </div>
           </div>
 
           <div className="text-[11px] sm:text-xs text-gray-500">
@@ -246,8 +265,8 @@ export default function OperatorDashboard() {
                 <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <th className="px-4 py-3">Citizen</th>
                   <th className="px-4 py-3">Title</th>
-                  <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Location</th>
+                  <th className="px-4 py-3">Community Check</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Last updated</th>
                   <th className="px-4 py-3 text-right">Action</th>
@@ -264,12 +283,41 @@ export default function OperatorDashboard() {
                       </td>
                       <td className="px-4 py-3 align-top text-gray-900 font-medium">
                         {r.title || 'Untitled'}
+                        <div className="text-xs text-gray-500 font-normal mt-0.5">{r.category}</div>
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-700">
-                        {r.category || '—'}
+                      <td className="px-4 py-3 align-top text-xs text-gray-700 max-w-xs">
+                        {r.state && r.city ? (
+                          <div className="font-semibold text-gray-900 mb-0.5">{r.city}, {r.state}</div>
+                        ) : null}
+                        <div className="truncate text-gray-500">{r.locationText || '—'}</div>
+                        {r.lat && r.lng && (
+                          <a 
+                            href={`https://www.google.com/maps?q=${r.lat},${r.lng}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline mt-1 inline-block"
+                          >
+                            View on Map
+                          </a>
+                        )}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-gray-700 max-w-xs truncate">
-                        {r.locationText || '—'}
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex flex-col gap-1 items-start">
+                           {/* Badge */}
+                           {(() => {
+                             switch(r.confidenceLevel) {
+                               case 'high': return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">High Confidence</span>;
+                               case 'medium': return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">Medium</span>;
+                               default: return <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">Low/Unverified</span>;
+                             }
+                           })()}
+                           
+                           <div className="flex text-xs gap-2 mt-1">
+                             <span className="text-green-700 font-medium">Yes: {r.yesCount||0}</span>
+                             <span className="text-gray-400">|</span>
+                             <span className="text-orange-700 font-medium">Uncertain: {r.noCount||0}</span>
+                           </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 align-top">
                         <span

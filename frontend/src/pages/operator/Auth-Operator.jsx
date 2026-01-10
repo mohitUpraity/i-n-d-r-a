@@ -162,6 +162,20 @@ export default function AuthOperator() {
           </p>
         </div>
 
+        {/* Role Explanation */}
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+          <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Operator Role
+          </h3>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>✓ View & manage all citizen reports</li>
+            <li>✓ Update incident status & assign responders</li>
+            <li>✓ Access advanced filtering & triage tools</li>
+            <li>⚠️ <strong>Requires admin approval</strong> - you'll be redirected to a pending page after registration</li>
+          </ul>
+        </div>
+
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-blue-900">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -414,11 +428,37 @@ export default function AuthOperator() {
           {/* Dev admin credentials (for testing) */}
           <div className="mt-4 p-3 bg-yellow-50 border rounded text-sm">
             <strong>Dev admin test credentials:</strong>
-            <div className="mt-1 font-mono text-sm">
-              Email: {DEV_HARDCODED_ADMIN_EMAIL} <br />
-              Password: {DEV_HARDCODED_ADMIN_PASSWORD}
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-yellow-200">
+                <p className="font-mono text-xs flex-1">
+                  <strong>Email:</strong> {DEV_HARDCODED_ADMIN_EMAIL}
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(DEV_HARDCODED_ADMIN_EMAIL);
+                    alert('Email copied!');
+                  }}
+                  className="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded text-xs font-semibold transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-yellow-200">
+                <p className="font-mono text-xs flex-1">
+                  <strong>Password:</strong> {DEV_HARDCODED_ADMIN_PASSWORD}
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(DEV_HARDCODED_ADMIN_PASSWORD);
+                    alert('Password copied!');
+                  }}
+                  className="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded text-xs font-semibold transition-colors"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Use these at <code>/auth/operator</code> to sign in as the dev admin for testing. After signing in, set the admin UID in <code>frontend/lib/config.js</code> to enable the admin UI.</p>
+            <p className="text-xs text-gray-600 mt-2">💡 Use these credentials to log in as admin and approve operator requests.</p>
           </div>
 
           {/* Toggle Login/Signup */}

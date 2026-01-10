@@ -105,164 +105,167 @@ export default function CitizenHome() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-green-700" aria-hidden />
-            <div>
-              <div className="text-lg font-bold text-gray-900">INDRA</div>
-              <div className="text-sm text-gray-600">Safety information for your area</div>
+      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo & Brand */}
+            <div className="flex items-center gap-3">
+              <div className="bg-linear-to-br from-green-600 to-green-700 p-2 rounded-lg shadow-sm">
+                <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-white" aria-hidden />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">INDRA</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Incident Reporting & Alert System</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <a
+                href="tel:112"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
+                aria-label="Call emergency services"
+              >
+                <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden />
+                <span className="hidden sm:inline">Emergency</span>
+                <span className="sm:hidden">112</span>
+              </a>
+
+              <Link
+                to="/profile"
+                className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Profile
+              </Link>
+
+              <button
+                onClick={handleSignOut}
+                className={`inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${signOutLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+                aria-label="Sign out"
+                disabled={signOutLoading}
+              >
+                {signOutLoading ? 'Signing out...' : 'Sign out'}
+              </button>
             </div>
           </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 w-full sm:w-auto">
-          <a
-            href="tel:112"
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 w-full sm:w-auto"
-            aria-label="Call emergency services"
-          >
-            <Phone className="w-4 h-4" aria-hidden /> Emergency
-          </a>
-
-          <Link
-            to="/profile"
-            className="hidden sm:inline text-sm text-gray-700 hover:underline"
-          >
-            Profile
-          </Link>
-
-          <button
-            onClick={handleSignOut}
-            className={`w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 rounded text-sm ${signOutLoading ? 'bg-gray-200 text-gray-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
-            aria-label="Sign out"
-          >
-            {signOutLoading ? 'Signing out...' : 'Sign out'}
-          </button>
-        </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Welcome */}
-        <section className="mb-4">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Hello, {firstName}</h1>
-          <p className="text-sm sm:text-base text-gray-700 mt-2">Report incidents, view your reports, and update your profile.</p>
+        <section className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Hello, {firstName}</h1>
+          <p className="text-base text-gray-600 mt-2">Stay safe and informed. Report incidents or verify alerts in your area.</p>
 
           {/* Profile saving banner */}
           {user && !profile && (
-            <div className="mt-3 p-3 rounded bg-yellow-50 border border-yellow-200 text-sm text-yellow-800 flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="mt-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-sm text-yellow-800 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
               <div>We're saving your profile. Some features may be limited — we'll retry in the background.</div>
             </div>
           )}
         </section>
 
-        {/* Quick Status */}
-        <section className="mb-6">
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            <div className="shrink-0 px-4 py-3 bg-white rounded-lg shadow-sm border w-44">
-              <div className="text-xs text-gray-500">Open reports</div>
-              <div className="text-xl font-semibold text-gray-900">—</div>
-            </div>
-            <div className="shrink-0 px-4 py-3 bg-white rounded-lg shadow-sm border w-44">
-              <div className="text-xs text-gray-500">Nearby alerts</div>
-              <div className="text-xl font-semibold text-gray-900">—</div>
-            </div>
-            <div className="shrink-0 px-4 py-3 bg-white rounded-lg shadow-sm border w-44">
-              <div className="text-xs text-gray-500">Last sync</div>
-              <div className="text-xl font-semibold text-gray-900">—</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Actions */}
-        <section className="mb-6">
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-            <div className="sm:col-span-2">
+        {/* Primary Actions - Hero Section */}
+        <section className="mb-8">
+          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+            {/* Report Incident - Primary CTA */}
+            <div className="lg:row-span-2">
               <button
                 onClick={() => navigate('/report')}
-                className={`w-full h-20 flex items-center gap-3 px-4 rounded-lg text-white font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${loadingNav ? 'bg-green-400' : 'bg-green-600 hover:bg-green-700'}`}
+                className={`group w-full h-full min-h-[160px] flex flex-col justify-between p-6 rounded-2xl text-white font-semibold shadow-lg hover:shadow-xl transition-all focus:outline-none focus:ring-4 focus:ring-green-500/50 ${loadingNav ? 'bg-green-500' : 'bg-linear-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800'}`}
                 aria-label="Report an incident"
               >
-                <PlusCircle className="w-6 h-6" aria-hidden />
-                <span className="text-lg">{loadingNav ? 'Loading…' : 'Report an Incident'}</span>
-              </button>
-              <p className="text-xs text-gray-500 mt-2">Quickly report hazards or emergencies</p>
-            </div>
-
-            <div className="">
-              <button
-                onClick={() => navigate('/reports')}
-                className="w-full h-20 flex items-center gap-3 px-4 rounded-lg border border-gray-300 text-gray-800 font-semibold bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
-                aria-label="My reports"
-              >
-                <FileText className="w-5 h-5" aria-hidden />
+                <div className="flex items-start justify-between">
+                  <div className="bg-white/20 p-3 rounded-xl group-hover:bg-white/30 transition-colors">
+                    <PlusCircle className="w-8 h-8" aria-hidden />
+                  </div>
+                  <div className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
+                    Primary Action
+                  </div>
+                </div>
                 <div className="text-left">
-                  <div>My Reports</div>
-                  <div className="text-xs text-gray-500">Track status </div>
+                  <h3 className="text-2xl font-bold mb-2">{loadingNav ? 'Loading…' : 'Report an Incident'}</h3>
+                  <p className="text-green-100 text-sm">Quickly report hazards, emergencies, or safety concerns in your area</p>
                 </div>
               </button>
             </div>
 
-            <div className="">
+            {/* Verify Alerts */}
+            <div>
               <button
-                onClick={() => navigate('/profile')}
-                className="w-full h-20 flex items-center gap-3 px-4 rounded-lg bg-white border border-gray-300 text-gray-800 font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
-                aria-label="Profile"
+                onClick={handleFindNearby}
+                className="group relative w-full h-full min-h-[160px] overflow-hidden rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 p-6 shadow-lg hover:shadow-xl transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/50"
               >
-                <User className="w-5 h-5" aria-hidden />
-                <div className="text-left">Profile<div className="text-xs text-gray-500">Update contact & safety preferences</div></div>
+                <div className="relative h-full flex flex-col justify-between text-left">
+                  <div className="bg-white/20 p-3 rounded-xl w-fit group-hover:bg-white/30 transition-colors">
+                    <MapPin className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Verify Alerts Near You</h3>
+                    <p className="text-blue-100 text-sm">Help authorities prioritize incidents</p>
+                  </div>
+                </div>
               </button>
             </div>
 
-            <div className="sm:col-span-3">
+            {/* Secondary Actions Grid */}
+            <div className="grid grid-cols-2 gap-4">
               <button
-                onClick={handleFindNearby}
-                className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-1 shadow-lg hover:shadow-xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => navigate('/reports')}
+                className="group h-full min-h-[120px] flex flex-col justify-between p-5 rounded-xl border-2 border-gray-200 text-gray-800 font-semibold bg-white hover:bg-gray-50 hover:border-gray-300 transition-all focus:outline-none focus:ring-4 focus:ring-gray-300/50"
+                aria-label="My reports"
               >
-                <div className="relative flex items-center justify-between bg-white/10 px-6 py-4 rounded-lg hover:bg-white/15 transition-colors">
-                  <div className="flex items-start gap-4 text-left">
-                    <div className="bg-white/20 p-3 rounded-full shrink-0">
-                      <MapPin className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">Verify Alerts Near You</h3>
-                      <p className="text-blue-100 text-sm mt-0.5">Help authorities prioritize by confirming incidents in real-time.</p>
-                    </div>
-                  </div>
-                  <div className="bg-white text-blue-700 px-4 py-2 rounded-full text-sm font-bold shadow-sm group-hover:bg-blue-50 transition-colors">
-                    Start Now &rarr;
-                  </div>
+                <FileText className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transition-colors" aria-hidden />
+                <div className="text-left">
+                  <div className="font-bold text-base">My Reports</div>
+                  <div className="text-xs text-gray-500 mt-1">Track status</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigate('/profile')}
+                className="group h-full min-h-[120px] flex flex-col justify-between p-5 rounded-xl bg-white border-2 border-gray-200 text-gray-800 font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all focus:outline-none focus:ring-4 focus:ring-gray-300/50"
+                aria-label="Profile"
+              >
+                <User className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transition-colors" aria-hidden />
+                <div className="text-left">
+                  <div className="font-bold text-base">Profile</div>
+                  <div className="text-xs text-gray-500 mt-1">Settings</div>
                 </div>
               </button>
             </div>
           </div>
         </section>
 
+
         {/* Recent Reports (live, for this citizen) */}
-        <section className="mb-6">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <h2 className="text-base sm:text-lg font-medium text-gray-900">Recent reports</h2>
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Recent Reports</h2>
             <button
               type="button"
               onClick={() => navigate('/reports')}
-              className="text-xs sm:text-sm text-green-700 hover:underline"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
             >
-              View all
+              View all →
             </button>
           </div>
 
-          <div className="mt-2 p-4 bg-white rounded-lg border text-gray-700">
+          <div className="bg-white rounded-xl border shadow-sm p-4 sm:p-6">
             {loadingReports ? (
-              <div className="text-sm text-gray-600">Loading your reports…</div>
+              <div className="text-center py-8 text-gray-500">Loading your reports…</div>
             ) : !recentReports || recentReports.length === 0 ? (
-              <div>
-                <div className="text-sm">No recent reports to show. Use "Report an Incident" to create a new report.</div>
-                <div className="mt-3">
-                  <button onClick={() => navigate('/report')} className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                    <PlusCircle className="w-4 h-4" /> Report now
-                  </button>
-                </div>
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600 mb-4">No recent reports to show.</p>
+                <button 
+                  onClick={() => navigate('/report')} 
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                >
+                  <PlusCircle className="w-4 h-4" /> Create your first report
+                </button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -270,30 +273,35 @@ export default function CitizenHome() {
                   const status = formatStatus(r.status);
                   const lastUpdated = r.updatedAt || r.createdAt;
                   return (
-                    <article key={r.id} className="border rounded-md p-3 flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-xs text-gray-500 mb-0.5">
-                          {r.category || 'report'}
+                    <article 
+                      key={r.id} 
+                      className="group border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
+                      onClick={() => navigate(`/reports/${r.id}`)}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-gray-500 uppercase">
+                              {r.category || 'General'}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 text-[11px] font-medium rounded-full border ${statusBadgeClass(status)}`}
+                            >
+                              {status}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">
+                            {r.title || 'Untitled report'}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            Updated {formatDate(lastUpdated)}
+                          </p>
                         </div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          {r.title || 'Untitled report'}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          Last updated {formatDate(lastUpdated)}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span
-                          className={`px-2 py-1 text-[11px] font-medium rounded-full border ${statusBadgeClass(status)}`}
-                        >
-                          {status}
-                        </span>
                         <button
                           type="button"
-                          onClick={() => navigate(`/reports/${r.id}`)}
-                          className="text-xs text-green-700 hover:underline"
+                          className="text-blue-600 group-hover:text-blue-700 text-sm font-medium shrink-0"
                         >
-                          View
+                          View →
                         </button>
                       </div>
                     </article>
@@ -305,22 +313,45 @@ export default function CitizenHome() {
         </section>
 
         {/* Safety Info */}
-        <section className="mb-6" aria-labelledby="safety-heading">
-          <h2 id="safety-heading" className="text-base sm:text-lg font-medium text-gray-900">Safety information</h2>
-          <ul className="mt-3 list-disc pl-5 text-gray-700 space-y-2">
-            <li>Stay informed: follow official local alerts.</li>
-            <li>If you feel unsafe, move to higher ground or a safe area.</li>
-            <li>Share clear, factual details when reporting (location, type, photos).</li>
-            <li>Only call emergency services for immediate danger.</li>
+        <section className="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-6" aria-labelledby="safety-heading">
+          <div className="flex items-start gap-3 mb-4">
+            <Shield className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+            <div>
+              <h2 id="safety-heading" className="text-lg font-bold text-gray-900 mb-1">Safety Guidelines</h2>
+              <p className="text-sm text-gray-600">Important information for your safety</p>
+            </div>
+          </div>
+          <ul className="space-y-2.5 text-sm text-gray-700">
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 font-bold shrink-0">•</span>
+              <span>Stay informed by following official local alerts and emergency broadcasts</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 font-bold shrink-0">•</span>
+              <span>If you feel unsafe, move to higher ground or a designated safe area immediately</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 font-bold shrink-0">•</span>
+              <span>Provide clear, factual details when reporting (exact location, incident type, photos if safe)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-600 font-bold shrink-0">•</span>
+              <span><strong>Call 112 immediately</strong> for life-threatening emergencies</span>
+            </li>
           </ul>
         </section>
 
         {/* Footer / Disclaimer */}
-        <footer className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600">
-          <p>Information is advisory. Follow official instructions from authorities.</p>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <a href="#" className="hover:underline">Language</a>
-            <a href="#" className="hover:underline">Report abuse</a>
+        <footer className="border-t pt-6 pb-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm">
+            <p className="text-gray-600">
+              <strong>Disclaimer:</strong> Information is advisory. Always follow official instructions from authorities.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-gray-500">
+              <a href="#" className="hover:text-gray-700 hover:underline">Language</a>
+              <a href="#" className="hover:text-gray-700 hover:underline">Report Abuse</a>
+              <a href="#" className="hover:text-gray-700 hover:underline">Privacy</a>
+            </div>
           </div>
         </footer>
       </main>
