@@ -9,17 +9,17 @@
 
 ## 📖 1. Executive Summary
 
-INDRA is a **government-oriented decision-support platform** designed to improve disaster preparedness, response, and recovery in **Himalayan regions**. Unlike traditional reactive systems, INDRA uses a **grid-based geospatial model** (inspired by DIGIPIN) to aggregate ground-level data into actionable intelligence.
+INDRA is a **government-oriented decision-support platform** implementing a **human-in-the-loop** approach to disaster management. It solves the critical problem of _information chaos_ during disasters by aggregating unified citizen reports into a transparent, grid-based operational picture.
 
-This repository contains the complete implementation plan, source code, and system design for the INDRA platform. It demonstrates how we move from a prototype to a scalable, mission-critical system capable of handling thousands of concurrent users and incidents.
+We adhere to a **"Verification First"** philosophy. Instead of relying on opaque black-box AI models, INDRA uses a transparent **Crowdsourced Confidence Algorithm** to validate ground truths.
 
-### Key Capabilities
+### Core Implemented Capabilities
 
 - **Citizen Reporting:** Structured incident reporting with 24+ categories (Landslides, Flash Floods, etc.).
-- **Community Verification:** Crowd-sourced confidence scoring to validate reports and reduce false alarms.
-- **Grid-Based Location Intelligence:** Precision mapping using GPS + State/City logic, aggregating data into 1km² - 10km² grids.
+- **Community Consensus Engine:** A weighted voting logic where local citizens verify reports (`Confirm` / `Uncertain`), generating a dynamic **Confidence Score** (0-100%).
+- **Grid-Based Location Intelligence:** geospatial logic that clusters incidents by administrative/impact grids (1km²) for authority decision-making.
 - **Operator Command Dashboard:** Real-time triage, verification, and status tracking for authorities.
-- **Nearby Alerts:** Proximity-based notifications for citizens and responders.
+- **Nearby Incident Tracking:** Proximity-based polling for citizens to see reports in their immediate vicinity.
 
 ---
 
@@ -43,7 +43,7 @@ graph TD
 
     subgraph "Core Services"
         API[API Gateway / Cloud Functions]
-        RiskEngine[Risk Calculation Engine]
+        RiskEngine[Algorithmic Risk Logic]
         GeoService[Grid & Location Service]
         Notifier[Notification Service]
     end
@@ -69,12 +69,12 @@ graph TD
     Notifier -->|Push/SMS| CitizenApp
 ```
 
-### Component Breakdown
+### Component Logic
 
 1.  **Frontend Clients:** React + Vite based PWAs tailored for Citizens (mobile-first) and Operators (data-dense desktop view).
 2.  **Authentication:** Secure, token-based auth with Role-Based Access Control (RBAC) ensuring strict separation between Citizen, Operator, and Admin data.
 3.  **Firestore (Database):** A real-time NoSQL database chosen for its ability to push live updates to operators without polling.
-4.  **Cloud Functions (Backend Logic):** Handles heavy lifting like risk score calculation, confidence aggregation, and cross-grid impact analysis.
+4.  **Backend Logic (Cloud Functions):** Handles deterministic tasks like input validation, confidence score aggregation (`(votes_yes / total) * weight`), and generating notifications.
 
 ---
 
@@ -167,7 +167,7 @@ Designing for disaster management means designing for **spikes**. Detailed below
 ### 5.4 Failure Recovery
 
 - **Redundancy:** Data is replicated across multiple Google Cloud zones.
-- **Degraded Mode:** If the AI verification service fails, the system falls back to **manual operator verification** and raw **vote counts**, ensuring the core reporting loop never breaks.
+- **Degraded Mode:** If the automated verification logic fails, the system falls back to **manual operator verification** and raw **vote counts**, ensuring the core reporting loop never breaks.
 
 ---
 
