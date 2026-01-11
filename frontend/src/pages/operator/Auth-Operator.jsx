@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmail, createUserWithEmail } from '../../lib/auth';
@@ -20,6 +20,11 @@ export default function AuthOperator() {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
