@@ -103,6 +103,32 @@ export default function ReportsList() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Status Guide */}
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-600" />
+            Understanding Report Status
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div className="bg-white rounded p-2 border border-gray-200">
+              <div className="font-semibold text-gray-700 mb-1">Submitted</div>
+              <div className="text-gray-600">Report received, awaiting review</div>
+            </div>
+            <div className="bg-white rounded p-2 border border-blue-200">
+              <div className="font-semibold text-blue-700 mb-1">Reviewed</div>
+              <div className="text-gray-600">Verified by authorities</div>
+            </div>
+            <div className="bg-white rounded p-2 border border-yellow-200">
+              <div className="font-semibold text-yellow-700 mb-1">Working</div>
+              <div className="text-gray-600">Response team is on it</div>
+            </div>
+            <div className="bg-white rounded p-2 border border-green-200">
+              <div className="font-semibold text-green-700 mb-1">Resolved</div>
+              <div className="text-gray-600">Issue has been fixed</div>
+            </div>
+          </div>
+        </div>
+
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">Your recent reports</h2>
           <div className="text-xs text-gray-500 flex items-center gap-2">
@@ -134,14 +160,40 @@ export default function ReportsList() {
                 return (
                   <article key={r.id} className="p-4 bg-white rounded-lg border">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
+                      <div className="flex-1">
                         <div className="text-xs text-gray-500 mb-0.5">
                           {r.category || 'report'}
                         </div>
                         <div className="text-lg font-semibold text-gray-900">
                           {r.title || 'Untitled report'}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">
+                        
+                        {/* Location Info */}
+                        {(r.city || r.locationText) && (
+                          <div className="mt-2 flex items-start gap-2 text-sm text-gray-600">
+                            <span className="text-gray-500">📍</span>
+                            <div>
+                              {r.state && r.city && (
+                                <div className="font-semibold text-gray-900">{r.city}, {r.state}</div>
+                              )}
+                              {r.locationText && (
+                                <div className="text-xs text-gray-600">{r.locationText}</div>
+                              )}
+                              {r.lat && r.lng && (
+                                <a 
+                                  href={`https://www.google.com/maps?q=${r.lat},${r.lng}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline text-xs mt-1 inline-block"
+                                >
+                                  View on Map →
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="text-xs text-gray-500 mt-2">
                           Last updated {formatDate(lastUpdated)}
                         </div>
                       </div>
@@ -153,7 +205,7 @@ export default function ReportsList() {
                         </span>
                         <button
                           onClick={() => navigate(`/reports/${r.id}`)}
-                          className="text-sm text-green-600 hover:underline"
+                          className="text-sm text-green-600 hover:underline font-medium"
                         >
                           View details
                         </button>

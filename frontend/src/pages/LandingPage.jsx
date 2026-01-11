@@ -161,6 +161,63 @@ export default function IndraLanding() {
               </div>
             </div>
 
+            {/* Quick Start Guide */}
+            <div className="mt-4 bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+              <h3 className="font-bold text-gray-900 mb-3 text-sm flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-600" />
+                Quick Start Guide
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-3 text-xs">
+                <div className="bg-white rounded-lg p-3 border border-green-100">
+                  <div className="font-semibold text-green-700 mb-2 flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    For Citizens
+                  </div>
+                  <ol className="space-y-1.5 text-gray-700">
+                    <li className="flex gap-2">
+                      <span className="font-bold text-green-600">1.</span>
+                      <span>Click "Citizen" button</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-green-600">2.</span>
+                      <span>Sign in with Google</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-green-600">3.</span>
+                      <span>Start reporting incidents!</span>
+                    </li>
+                  </ol>
+                  <div className="mt-2 text-xs text-green-700 font-semibold">
+                    ✓ Instant access, no approval needed
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 border border-blue-100">
+                  <div className="font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                    <Building2 className="w-4 h-4" />
+                    For Operators
+                  </div>
+                  <ol className="space-y-1.5 text-gray-700">
+                    <li className="flex gap-2">
+                      <span className="font-bold text-blue-600">1.</span>
+                      <span>Click "Operator" button</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-blue-600">2.</span>
+                      <span>Register your account</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-blue-600">3.</span>
+                      <span>Wait for admin approval</span>
+                    </li>
+                  </ol>
+                  <div className="mt-2 text-xs text-blue-700 font-semibold">
+                    ⚠️ Requires admin verification
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="mt-4 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 text-sm">
               <button
                 onClick={() => setShowPrototypeModal(false)}

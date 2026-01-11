@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Shield, Mail, Lock, Chrome, AlertCircle, Building2 } from 'lucide-react';
-import { DEV_HARDCODED_ADMIN_EMAIL, DEV_HARDCODED_ADMIN_PASSWORD } from '../../lib/config';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmail, createUserWithEmail } from '../../lib/auth';
 import { ensureUserProfile } from '../../lib/userProfile';
@@ -162,18 +161,74 @@ export default function AuthOperator() {
           </p>
         </div>
 
-        {/* Role Explanation */}
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
-          <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-            <Building2 className="w-5 h-5" />
-            Operator Role
+        {/* How It Works - Flow Diagram */}
+        <div className="bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6 mb-6">
+          <h3 className="font-bold text-blue-900 mb-4 text-lg flex items-center gap-2">
+            <Building2 className="w-6 h-6" />
+            How the Operator System Works
           </h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>✓ View & manage all citizen reports</li>
-            <li>✓ Update incident status & assign responders</li>
-            <li>✓ Access advanced filtering & triage tools</li>
-            <li>⚠️ <strong>Requires admin approval</strong> - you'll be redirected to a pending page after registration</li>
-          </ul>
+          
+          {/* Flow Diagram */}
+          <div className="bg-white rounded-lg p-4 mb-4 border-2 border-blue-200">
+            <div className="space-y-4">
+              {/* Step 1 */}
+              <div className="flex gap-3 items-start">
+                <div className="shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-blue-900 mb-1">Register as Operator</h4>
+                  <p className="text-sm text-gray-700">Fill out the registration form with your organization details, role, and designation.</p>
+                </div>
+              </div>
+              
+              <div className="ml-5 border-l-2 border-blue-300 h-6"></div>
+              
+              {/* Step 2 */}
+              <div className="flex gap-3 items-start">
+                <div className="shrink-0 w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-purple-900 mb-1">Account Pending</h4>
+                  <p className="text-sm text-gray-700">Your account is created with "pending" status. You'll see a waiting page with instructions.</p>
+                </div>
+              </div>
+              
+              <div className="ml-5 border-l-2 border-blue-300 h-6"></div>
+              
+              {/* Step 3 */}
+              <div className="flex gap-3 items-start">
+                <div className="shrink-0 w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-red-900 mb-1">Admin Approval Required</h4>
+                  <p className="text-sm text-gray-700">An admin must log in and approve your request from the Admin Dashboard.</p>
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-300 rounded text-xs">
+                    <strong>For Testing:</strong> Go to <Link to="/auth/admin" className="text-blue-600 underline font-semibold">Admin Login</Link> to approve requests
+                  </div>
+                </div>
+              </div>
+              
+              <div className="ml-5 border-l-2 border-blue-300 h-6"></div>
+              
+              {/* Step 4 */}
+              <div className="flex gap-3 items-start">
+                <div className="shrink-0 w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">✓</div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-green-900 mb-1">Access Granted!</h4>
+                  <p className="text-sm text-gray-700">Once approved, log back in here to access the full Operator Dashboard with all reports and management tools.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* What Operators Can Do */}
+          <div className="bg-blue-100 rounded-lg p-4 border border-blue-300">
+            <h4 className="font-semibold text-blue-900 mb-2">What Operators Can Do:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>✓ View & manage all citizen disaster reports in real-time</li>
+              <li>✓ Update incident status (Submitted → Reviewed → Working → Resolved)</li>
+              <li>✓ Filter reports by status, category, and confidence level</li>
+              <li>✓ Access location data and community verification scores</li>
+              <li>✓ Coordinate emergency response operations</li>
+            </ul>
+          </div>
         </div>
 
         {/* Login Card */}
@@ -425,40 +480,40 @@ export default function AuthOperator() {
 
           {/* Divider - Removed Google Auth */}
 
-          {/* Dev admin credentials (for testing) */}
-          <div className="mt-4 p-3 bg-yellow-50 border rounded text-sm">
-            <strong>Dev admin test credentials:</strong>
+          {/* Test operator credentials (for testing) */}
+          <div className="mt-4 p-3 bg-green-50 border-2 border-green-300 rounded-lg">
+            <strong className="text-green-900">✅ Test Operator Credentials (Already Approved):</strong>
             <div className="mt-2 space-y-2">
-              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-yellow-200">
+              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-green-200">
                 <p className="font-mono text-xs flex-1">
-                  <strong>Email:</strong> {DEV_HARDCODED_ADMIN_EMAIL}
+                  <strong>Email:</strong> operator@indra.com
                 </p>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(DEV_HARDCODED_ADMIN_EMAIL);
+                    navigator.clipboard.writeText('operator@indra.com');
                     alert('Email copied!');
                   }}
-                  className="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded text-xs font-semibold transition-colors"
+                  className="px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded text-xs font-semibold transition-colors"
                 >
                   Copy
                 </button>
               </div>
-              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-yellow-200">
+              <div className="flex items-center justify-between gap-2 bg-white p-2 rounded border border-green-200">
                 <p className="font-mono text-xs flex-1">
-                  <strong>Password:</strong> {DEV_HARDCODED_ADMIN_PASSWORD}
+                  <strong>Password:</strong> indra123
                 </p>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(DEV_HARDCODED_ADMIN_PASSWORD);
+                    navigator.clipboard.writeText('indra123');
                     alert('Password copied!');
                   }}
-                  className="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded text-xs font-semibold transition-colors"
+                  className="px-2 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded text-xs font-semibold transition-colors"
                 >
                   Copy
                 </button>
               </div>
             </div>
-            <p className="text-xs text-gray-600 mt-2">💡 Use these credentials to log in as admin and approve operator requests.</p>
+            <p className="text-xs text-green-800 mt-2">💡 Use these credentials to instantly access the operator dashboard without waiting for approval.</p>
           </div>
 
           {/* Toggle Login/Signup */}

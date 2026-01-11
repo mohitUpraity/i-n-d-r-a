@@ -237,6 +237,41 @@ export default function CitizenReport() {
           </p>
         </div>
 
+        {/* Progress Steps */}
+        <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${incidentType ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>
+                {incidentType ? '✓' : '1'}
+              </div>
+              <span className="text-sm font-medium text-gray-700">What happened</span>
+            </div>
+            <div className="flex-1 h-1 bg-gray-200 mx-3">
+              <div className={`h-full transition-all ${incidentType ? 'bg-green-500 w-full' : 'bg-blue-500 w-0'}`}></div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${selectedState && selectedCity && gpsLocation ? 'bg-green-500 text-white' : incidentType ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                {selectedState && selectedCity && gpsLocation ? '✓' : '2'}
+              </div>
+              <span className="text-sm font-medium text-gray-700">Where</span>
+            </div>
+            <div className="flex-1 h-1 bg-gray-200 mx-3">
+              <div className={`h-full transition-all ${selectedState && selectedCity && gpsLocation ? 'bg-green-500 w-full' : 'bg-gray-200 w-0'}`}></div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${incidentType && selectedState && selectedCity && gpsLocation ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                3
+              </div>
+              <span className="text-sm font-medium text-gray-700">Submit</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            Fill out the required fields to report an incident
+          </p>
+        </div>
+
         {/* Main Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {/* Error Message */}

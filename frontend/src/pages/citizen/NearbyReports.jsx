@@ -198,6 +198,48 @@ export default function NearbyReports() {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
+        {/* How Verification Works - Guide */}
+        {!loading && reports.length === 0 && !error && (
+          <div className="mb-6 bg-linear-to-br from-green-50 to-blue-50 border-2 border-green-200 rounded-xl p-6">
+            <h3 className="font-bold text-gray-900 mb-4 text-lg flex items-center gap-2">
+              <Activity className="w-6 h-6 text-green-600" />
+              How Community Verification Works
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-white rounded-lg p-4 border border-green-100">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                  <ThumbsUp className="w-6 h-6 text-green-600" />
+                </div>
+                <h4 className="font-semibold text-gray-900 mb-2">Confirm</h4>
+                <p className="text-sm text-gray-600">Click if you can verify this incident is real. Your confirmation increases confidence.</p>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-orange-100">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
+                  <HelpCircle className="w-6 h-6 text-orange-600" />
+                </div>
+                <h4 className="font-semibold text-gray-900 mb-2">Uncertain</h4>
+                <p className="text-sm text-gray-600">Click if you're not sure or can't verify. Helps filter false alarms.</p>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border border-blue-100">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                  <CheckCircle className="w-6 h-6 text-blue-600" />
+                </div>
+                <h4 className="font-semibold text-gray-900 mb-2">Confidence Level</h4>
+                <p className="text-sm text-gray-600">More confirmations = Higher confidence = Faster response from authorities.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+              <p className="text-sm text-gray-700 text-center">
+                <strong className="text-blue-600">💡 Your Role:</strong> Help emergency responders prioritize real incidents by verifying reports near you. Every verification counts!
+              </p>
+            </div>
+          </div>
+        )}
+        
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 flex items-start gap-3">
              <AlertTriangle className="w-5 h-5 shrink-0" />
@@ -259,13 +301,30 @@ export default function NearbyReports() {
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 {report.title}
               </h3>
+              
+              {/* Location Info */}
+              {(report.city || report.locationText) && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-2">
+                  <MapPin className="w-3 h-3" />
+                  <div className="truncate">
+                    {report.state && report.city && (
+                      <span className="font-semibold text-gray-900">{report.city}, {report.state}</span>
+                    )}
+                    {report.locationText && report.state && report.city && <span className="text-gray-400 mx-1">•</span>}
+                    {report.locationText && (
+                      <span className="text-gray-500">{report.locationText}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                 {report.description}
               </p>
 
               {/* Action Bar */}
-              <div className="flex items-center justify-between pt-3 border-t">
-                 <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between pt-3 border-t gap-2">
+                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Confirm Button */}
                     <button 
                       onClick={(e) => handleVote(e, report.id, 'yes')}
@@ -296,12 +355,26 @@ export default function NearbyReports() {
                        {report.noCount > 0 && <span className="ml-1 text-xs bg-orange-200 px-1 rounded-full text-orange-800">{report.noCount}</span>}
                     </button>
                     
+                    {/* View on Map Button */}
+                    {report.lat && report.lng && (
+                      <a
+                        href={`https://www.google.com/maps?q=${report.lat},${report.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors border text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        Map
+                      </a>
+                    )}
+                    
                     {hasVoted && (
-                       <span className="text-xs text-gray-400 italic ml-2">Thanks for voting</span>
+                       <span className="text-xs text-gray-400 italic">Thanks for voting</span>
                     )}
                  </div>
 
-                 <span className="text-blue-600 text-xs font-medium">View &rarr;</span>
+                 <span className="text-blue-600 text-xs font-medium shrink-0">View &rarr;</span>
               </div>
             </div>
           )})}

@@ -99,11 +99,24 @@ export default function ReportView() {
               </div>
 
               {report.locationText && (
-                <div className="p-3 bg-gray-50 border rounded flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-gray-600" />
-                  <div>
-                    <div className="text-sm font-medium">Location</div>
-                    <div className="text-xs text-gray-700">{report.locationText}</div>
+                <div className="p-3 bg-gray-50 border rounded">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-gray-600 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium mb-1">Location</div>
+                      <div className="text-xs text-gray-700 mb-2">{report.locationText}</div>
+                      {report.lat && report.lng && (
+                        <a 
+                          href={`https://www.google.com/maps?q=${report.lat},${report.lng}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm font-medium"
+                        >
+                          <MapPin className="w-4 h-4" />
+                          View on Google Maps →
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

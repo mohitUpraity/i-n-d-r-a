@@ -167,6 +167,84 @@ export default function CitizenHome() {
           )}
         </section>
 
+        {/* First-Time User Guide */}
+        <section className="mb-8">
+          <div className="bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Welcome to INDRA!</h2>
+                <p className="text-sm text-gray-700">Your community-powered disaster response platform</p>
+              </div>
+            </div>
+
+            {/* How It Works - Visual Flow */}
+            <div className="bg-white rounded-xl p-4 mb-4">
+              <h3 className="font-semibold text-gray-900 mb-3 text-center">How It Works</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                {/* Step 1 */}
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <PlusCircle className="w-8 h-8 text-green-600" />
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900 mb-1">1. Report</div>
+                  <div className="text-xs text-gray-600">Spot a hazard or emergency</div>
+                </div>
+
+                <div className="hidden sm:flex items-center justify-center">
+                  <div className="text-blue-400 text-2xl">→</div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <MapPin className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900 mb-1">2. Verify</div>
+                  <div className="text-xs text-gray-600">Community confirms reports</div>
+                </div>
+
+                <div className="hidden sm:flex items-center justify-center">
+                  <div className="text-blue-400 text-2xl">→</div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Shield className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900 mb-1">3. Respond</div>
+                  <div className="text-xs text-gray-600">Authorities take action</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Tips */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-white rounded-lg p-3 border border-blue-100">
+                <div className="flex items-start gap-2">
+                  <div className="text-green-600 font-bold text-lg">💡</div>
+                  <div>
+                    <div className="font-semibold text-sm text-gray-900">Report Incidents</div>
+                    <div className="text-xs text-gray-600">Use GPS location for accurate reporting</div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-blue-100">
+                <div className="flex items-start gap-2">
+                  <div className="text-blue-600 font-bold text-lg">🔍</div>
+                  <div>
+                    <div className="font-semibold text-sm text-gray-900">Verify Nearby</div>
+                    <div className="text-xs text-gray-600">Help prioritize real emergencies</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Primary Actions - Hero Section */}
         <section className="mb-8">
           <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
@@ -293,16 +371,46 @@ export default function CitizenHome() {
                           <h3 className="text-base font-semibold text-gray-900 mb-1 truncate">
                             {r.title || 'Untitled report'}
                           </h3>
+                          
+                          {/* Location Info */}
+                          {(r.city || r.locationText) && (
+                            <div className="flex items-start gap-1.5 text-xs text-gray-600 mb-1">
+                              <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                {r.state && r.city && (
+                                  <div className="font-semibold text-gray-900 truncate">{r.city}, {r.state}</div>
+                                )}
+                                {r.locationText && (
+                                  <div className="text-xs text-gray-500 truncate">{r.locationText}</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
                           <p className="text-xs text-gray-500">
                             Updated {formatDate(lastUpdated)}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          className="text-blue-600 group-hover:text-blue-700 text-sm font-medium shrink-0"
-                        >
-                          View →
-                        </button>
+                        <div className="flex flex-col gap-2 items-end shrink-0">
+                          {r.lat && r.lng && (
+                            <a
+                              href={`https://www.google.com/maps?q=${r.lat},${r.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-xs font-medium hover:underline"
+                            >
+                              <MapPin className="w-3 h-3" />
+                              Map
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            className="text-blue-600 group-hover:text-blue-700 text-sm font-medium"
+                          >
+                            View →
+                          </button>
+                        </div>
                       </div>
                     </article>
                   );

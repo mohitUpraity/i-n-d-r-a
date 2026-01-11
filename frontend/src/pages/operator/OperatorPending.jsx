@@ -84,25 +84,31 @@ export default function OperatorPending() {
           )}
 
           {/* Approval Flow Instructions */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
-            <h3 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
-              How to Get Approved (For Testing This Prototype)
+          <div className="bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-6 mb-6">
+            <h3 className="font-bold text-blue-900 mb-4 text-lg flex items-center gap-2">
+              <AlertCircle className="w-6 h-6" />
+              How to Test the Operator Approval Flow
             </h3>
+            <p className="text-sm text-blue-800 mb-4">
+              This is a <strong>prototype demonstration</strong> of the admin-operator approval workflow. Follow these steps to test it:
+            </p>
             <div className="space-y-4 text-sm text-blue-900">
               <div className="flex gap-3">
-                <div className="shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">1</div>
-                <div>
-                  <p className="font-semibold mb-1">Sign out of this operator account</p>
-                  <p className="text-blue-800">Click the "Sign Out" button below</p>
+                <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                <div className="flex-1">
+                  <p className="font-semibold mb-1">Sign Out of This Operator Account</p>
+                  <p className="text-blue-800">Click the "Sign Out" button below to log out of your pending operator account.</p>
                 </div>
               </div>
+              
+              <div className="ml-4 border-l-2 border-blue-300 h-4"></div>
+              
               <div className="flex gap-3">
-                <div className="shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">2</div>
-                <div>
-                  <p className="font-semibold mb-1">Log in as Admin</p>
-                  <p className="text-blue-800">Go to <Link to="/auth/admin" className="font-semibold underline hover:text-blue-600">Admin Login</Link> and use these credentials:</p>
-                  <div className="mt-2 p-3 bg-white border border-blue-300 rounded space-y-2">
+                <div className="shrink-0 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                <div className="flex-1">
+                  <p className="font-semibold mb-1">Log In as Admin</p>
+                  <p className="text-blue-800 mb-2">Go to <Link to="/auth/admin" className="font-semibold underline hover:text-blue-600">Admin Login</Link> and use these credentials:</p>
+                  <div className="p-3 bg-white border-2 border-yellow-300 rounded-lg space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-mono text-xs flex-1"><strong>Email:</strong> {DEV_HARDCODED_ADMIN_EMAIL}</p>
                       <button
@@ -130,20 +136,32 @@ export default function OperatorPending() {
                   </div>
                 </div>
               </div>
+              
+              <div className="ml-4 border-l-2 border-blue-300 h-4"></div>
+              
               <div className="flex gap-3">
-                <div className="shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">3</div>
-                <div>
-                  <p className="font-semibold mb-1">Approve your operator account</p>
-                  <p className="text-blue-800">In the Admin Dashboard, find your pending request and click "Approve"</p>
+                <div className="shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                <div className="flex-1">
+                  <p className="font-semibold mb-1">Approve Your Operator Account</p>
+                  <p className="text-blue-800">In the Admin Dashboard, find your pending operator request in the "Pending Operator Requests" section and click <strong>"Approve"</strong>.</p>
                 </div>
               </div>
+              
+              <div className="ml-4 border-l-2 border-blue-300 h-4"></div>
+              
               <div className="flex gap-3">
-                <div className="shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-xs">4</div>
-                <div>
-                  <p className="font-semibold mb-1">Sign back in as Operator</p>
-                  <p className="text-blue-800">Return to <Link to="/auth/operator" className="font-semibold underline hover:text-blue-600">Operator Login</Link> and log in - you'll now have access!</p>
+                <div className="shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm">✓</div>
+                <div className="flex-1">
+                  <p className="font-semibold mb-1">Sign Back In as Operator</p>
+                  <p className="text-blue-800">Return to <Link to="/auth/operator" className="font-semibold underline hover:text-blue-600">Operator Login</Link> and log in with your operator credentials - you'll now have full access to the Operator Dashboard!</p>
                 </div>
               </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+              <p className="text-xs text-yellow-800">
+                💡 <strong>Note:</strong> In a production system, admins would receive email notifications about new operator requests and approve them through a dedicated admin portal. This simplified flow is for prototype demonstration purposes.
+              </p>
             </div>
           </div>
 
