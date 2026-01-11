@@ -140,8 +140,8 @@ export default function IndraLanding() {
                 </p>
                 <ul className="list-disc list-inside text-green-900 space-y-1 text-xs sm:text-sm">
                   <li><strong>24 Incident Categories:</strong> Emergency, Infrastructure, Natural Disasters, Utilities</li>
-                  <li><strong>Community Verification:</strong> Citizens verify nearby incidents to help authorities prioritize</li>
-                  <li><strong>Grid-wise Location:</strong> GPS + State/City for precise mapping</li>
+                  <li><strong>Smart Location Locking:</strong> Auto-fills State/City from GPS to prevent fraud</li>
+                  <li><strong>Focus-Mode Filtering:</strong> Citizens see "My City" reports; Operators get state-wide views</li>
                   <li><strong>Nearby Incident Tracking:</strong> See & verify reports around you in real-time</li>
                   <li><strong>Operator Dashboard:</strong> Advanced filtering, triage & status tracking</li>
                 </ul>
@@ -176,15 +176,15 @@ export default function IndraLanding() {
                   <ol className="space-y-1.5 text-gray-700">
                     <li className="flex gap-2">
                       <span className="font-bold text-green-600">1.</span>
-                      <span>Click "Citizen" button</span>
+                      <span>Click "Citizen" & Sign in</span>
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-green-600">2.</span>
-                      <span>Sign in with Google</span>
+                      <span>Auto-detect GPS Location</span>
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-green-600">3.</span>
-                      <span>Start reporting incidents!</span>
+                      <span>Submit or Verify Nearby Reports</span>
                     </li>
                   </ol>
                   <div className="mt-2 text-xs text-green-700 font-semibold">
@@ -200,15 +200,15 @@ export default function IndraLanding() {
                   <ol className="space-y-1.5 text-gray-700">
                     <li className="flex gap-2">
                       <span className="font-bold text-blue-600">1.</span>
-                      <span>Click "Operator" button</span>
+                      <span>Register as Operator</span>
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-blue-600">2.</span>
-                      <span>Register your account</span>
+                      <span>Wait for admin approval</span>
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-blue-600">3.</span>
-                      <span>Wait for admin approval</span>
+                      <span>Access Command Dashboard</span>
                     </li>
                   </ol>
                   <div className="mt-2 text-xs text-blue-700 font-semibold">
@@ -623,7 +623,7 @@ function HowItWorksSection() {
   const steps = [
     {
       title: "Ground-Level Data Collection",
-      desc: "Citizens report incidents across 24 categories (emergencies, infrastructure, natural disasters) with GPS location and photos.",
+      desc: "Citizens report incidents using **Auto-Detected GPS** (locked to prevent fraud) with photos and precise state/city tagging.",
     },
     {
       title: "Community Verification",
@@ -631,11 +631,11 @@ function HowItWorksSection() {
     },
     {
       title: "Smart Location Encoding",
-      desc: "GPS coordinates and State/City data converted to privacy-preserving grid codes for precise geographic identification.",
+      desc: "Reverse Geocoding converts GPS to standardized State/City codes for privacy-preserving grid identification.",
     },
     {
       title: "Decision Command Center",
-      desc: "Operators access unified dashboard with confidence filters, location data, and real-time status updates for intelligent triage.",
+      desc: "Operators access unified dashboard with Smart State/City filters, high-confidence alerts, and real-time status updates.",
     },
     {
       title: "Coordinated Response",

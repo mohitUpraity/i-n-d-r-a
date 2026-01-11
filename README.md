@@ -16,10 +16,11 @@ We adhere to a **"Verification First"** philosophy. Instead of relying on opaque
 ### Core Implemented Capabilities
 
 - **Citizen Reporting:** Structured incident reporting with 24+ categories (Landslides, Flash Floods, etc.).
+- **Fraud-Resistant Location:** **Smart Location Locking** auto-detects and freezes State/City fields from GPS to prevent fake reports from remote locations.
 - **Community Consensus Engine:** A weighted voting logic where local citizens verify reports (`Confirm` / `Uncertain`), generating a dynamic **Confidence Score** (0-100%).
-- **Grid-Based Location Intelligence:** geospatial logic that clusters incidents by administrative/impact grids (1km²) for authority decision-making.
-- **Operator Command Dashboard:** Real-time triage, verification, and status tracking for authorities.
-- **Nearby Incident Tracking:** Proximity-based polling for citizens to see reports in their immediate vicinity.
+- **Standardized Location Logic:** Automatic reverse geocoding (GPS → State/City) ensures data uniformity for operators.
+- **Operator Command Dashboard:** Real-time triage, verification, and status tracking for authorities with smart filters.
+- **Nearby Incident Tracking:** Focused "GPS Radius" and "My City" filters to reduce noise and highlight actionable local reports.
 
 ---
 
@@ -118,6 +119,7 @@ sequenceDiagram
     participant OP as Operator
 
     C->>FE: Submits Incident (Type, GPS, Photo)
+    FE->>FE: Auto-Detect State/City & Lock Location
     FE->>DB: Create Report Document (Status: Pending)
 
     par Community Verification
@@ -155,6 +157,8 @@ erDiagram
         string userId FK
         string category "landslide|flood|..."
         geopoint location
+        string state
+        string city
         string status "pending|verified|resolved"
         int confidenceScore
         timestamp createdAt
@@ -198,13 +202,13 @@ Designing for disaster management means designing for **spikes**. Detailed below
 
 ## 🛠️ 7. Tech Stack & Implementation Details
 
-| Component    | Technology                  | Reasoning                                                      |
-| :----------- | :-------------------------- | :------------------------------------------------------------- |
-| **Frontend** | React, Vite, Tailwind CSS   | High performance, rapid iteration, small bundle size.          |
-| **Auth**     | Firebase Auth               | Secure identity handling, supports email/Google/Phone.         |
-| **Database** | Cloud Firestore             | Real-time listeners for operator dashboards, seamless scaling. |
-| **Location** | Geolocation API + Nominatim | Precise coordinates mapped to administrative boundaries.       |
-| **Icons**    | Lucide React                | Clean, intuitive visual language for stressful situations.     |
+| Component    | Technology                | Reasoning                                                        |
+| :----------- | :------------------------ | :--------------------------------------------------------------- |
+| **Frontend** | React, Vite, Tailwind CSS | High performance, rapid iteration, small bundle size.            |
+| **Auth**     | Firebase Auth             | Secure identity handling, supports email/Google/Phone.           |
+| **Database** | Cloud Firestore           | Real-time listeners for operator dashboards, seamless scaling.   |
+| **Location** | BigDataCloud API + GPS    | **Reverse Geocoding** for precise State/City detection (No CORS) |
+| **Icons**    | Lucide React              | Clean, intuitive visual language for stressful situations.       |
 
 ---
 

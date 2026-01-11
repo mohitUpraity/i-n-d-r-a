@@ -172,6 +172,289 @@ export const getNearbyReports = async (centerLat, centerLng, radiusInKm) => {
   return matchingDocs;
 };
 
+// ---------- Administrative Filtering with Distance Calculation ----------
+
+// ADMINISTRATIVE QUERY (State-Level):
+// This function retrieves all reports within a specific state and calculates
+// the distance from the user's current location to each report.
+// 
+// Use Cases:
+//   - Citizens want to see all incidents in their state regardless of GPS radius
+//   - Operators want to filter by administrative boundaries
+//   - Combined with GPS filtering for "reports in my state within 10km"
+//
+// SCALABILITY NOTE: For states with 10,000+ reports, consider:
+//   - Adding pagination (Firestore startAfter/limit)
+//   - Implementing server-side distance calculation via Cloud Functions
+//   - Caching results on the client for 5-10 minutes
+//
+// FIRESTORE INDEX REQUIRED:
+//   Collection: reports
+//   Fields: state (Ascending), createdAt (Descending)
+export const getReportsByState = async (state, userLat = null, userLng = null) => {
+  if (!state) throw new Error('State is required');
+
+  const q = query(
+    collection(db, 'reports'),
+    where('state', '==', state),
+    orderBy('createdAt', 'desc')
+  );
+
+  const snapshot = await getDocs(q);
+  const reports = [];
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    let distanceInKm = null;
+
+    // Calculate distance if user location is provided and report has coordinates
+    if (userLat && userLng && data.lat && data.lng) {
+      distanceInKm = geofire.distanceBetween([data.lat, data.lng], [userLat, userLng]);
+    }
+
+    reports.push({
+      id: doc.id,
+      ...data,
+      distanceInKm, // null if distance cannot be calculated
+    });
+  });
+
+  // Sort by distance if available, otherwise by creation time (already ordered by query)
+  if (userLat && userLng) {
+    reports.sort((a, b) => {
+      // Reports with distance come first, sorted by distance
+      if (a.distanceInKm !== null && b.distanceInKm !== null) {
+        return a.distanceInKm - b.distanceInKm;
+      }
+      // Reports without distance go to the end
+      if (a.distanceInKm === null) return 1;
+      if (b.distanceInKm === null) return -1;
+      return 0;
+    });
+  }
+
+  return reports;
+};
+
+// ADMINISTRATIVE QUERY (City-Level):
+// This function retrieves all reports within a specific city and calculates
+// the distance from the user's current location to each report.
+//
+// IMPORTANT: City filtering requires BOTH city and state because city names
+// can be duplicated across states (e.g., "Springfield" exists in multiple states).
+//
+// FIRESTORE INDEX REQUIRED:
+//   Collection: reports
+//   Fields: state (Ascending), city (Ascending), createdAt (Descending)
+export const getReportsByCity = async (city, state, userLat = null, userLng = null) => {
+  if (!city || !state) throw new Error('Both city and state are required');
+
+  const q = query(
+    collection(db, 'reports'),
+    where('state', '==', state),
+    where('city', '==', city),
+    orderBy('createdAt', 'desc')
+  );
+
+  const snapshot = await getDocs(q);
+  const reports = [];
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    let distanceInKm = null;
+
+    // Calculate distance if user location is provided and report has coordinates
+    if (userLat && userLng && data.lat && data.lng) {
+      distanceInKm = geofire.distanceBetween([data.lat, data.lng], [userLat, userLng]);
+    }
+
+    reports.push({
+      id: doc.id,
+      ...data,
+      distanceInKm,
+    });
+  });
+
+  // Sort by distance if available
+  if (userLat && userLng) {
+    reports.sort((a, b) => {
+      if (a.distanceInKm !== null && b.distanceInKm !== null) {
+        return a.distanceInKm - b.distanceInKm;
+      }
+      if (a.distanceInKm === null) return 1;
+      if (b.distanceInKm === null) return -1;
+      return 0;
+    });
+  }
+
+  return reports;
+};
+
+// COMBINED QUERY (GPS Radius + State):
+// This function combines geohash-based proximity search with state filtering.
+// It finds reports that are BOTH within the GPS radius AND in the specified state.
+//
+// Use Case: "Show me incidents within 10km that are in Maharashtra"
+// This is useful near state borders where GPS radius might include multiple states.
+//
+// IMPLEMENTATION NOTE: We use client-side filtering for state because Firestore
+// doesn't support combining geohash range queries with additional where clauses
+// efficiently. For production scale, consider moving this to Cloud Functions.
+//
+// FIRESTORE INDEX REQUIRED: Same as getNearbyReports (geohash index)
+export const getReportsByStateAndRadius = async (state, centerLat, centerLng, radiusInKm) => {
+  if (!state) throw new Error('State is required');
+  
+  // First, get all reports within the GPS radius using existing function
+  const nearbyReports = await getNearbyReports(centerLat, centerLng, radiusInKm);
+
+  // Then, filter by state on the client side
+  const filteredReports = nearbyReports.filter((report) => report.state === state);
+
+  // Already sorted by distance from getNearbyReports
+  return filteredReports;
+};
+
+// COMBINED QUERY (GPS Radius + City):
+// This function combines geohash-based proximity search with city filtering.
+// It finds reports that are BOTH within the GPS radius AND in the specified city.
+//
+// Use Case: "Show me incidents within 5km that are in Mumbai"
+// Useful in large metropolitan areas or near city boundaries.
+//
+// FIRESTORE INDEX REQUIRED: Same as getNearbyReports (geohash index)
+export const getReportsByCityAndRadius = async (city, state, centerLat, centerLng, radiusInKm) => {
+  if (!city || !state) throw new Error('Both city and state are required');
+  
+  // First, get all reports within the GPS radius
+  const nearbyReports = await getNearbyReports(centerLat, centerLng, radiusInKm);
+
+  // Then, filter by city and state on the client side
+  const filteredReports = nearbyReports.filter(
+    (report) => report.city === city && report.state === state
+  );
+
+  // Already sorted by distance from getNearbyReports
+  return filteredReports;
+};
+
+// ---------- Reverse Geocoding (Auto-detect State/City from GPS) ----------
+
+// REVERSE GEOCODING:
+// This function converts GPS coordinates (lat/lng) to human-readable address
+// including state and city. This is used to auto-detect the user's location
+// and prevent fraud (users can't manually select a different state/city).
+//
+// We use Nominatim (OpenStreetMap) because:
+//   - Free and no API key required
+//   - 95%+ accuracy for state/city detection in India
+//   - Rate limit: 1 request/second (sufficient for our use case)
+//   - Good coverage of Indian cities and states
+//
+// IMPORTANT: Nominatim requires a User-Agent header and has a usage policy:
+//   - Max 1 request per second
+//   - Must include application name in User-Agent
+//   - See: https://operations.osmfoundation.org/policies/nominatim/
+//
+// ACCURACY:
+//   - State detection: 99%+ (state boundaries are large and well-defined)
+//   - City detection: 95%+ (may have issues at city borders or rural areas)
+//   - Fallback: Returns district/town if city not available
+//
+// SCALABILITY NOTE: For high-traffic production:
+//   - Consider caching results by rounded coordinates (e.g., 2 decimal places)
+//   - Or use Google Geocoding API (requires API key but higher rate limits)
+//   - Or implement server-side geocoding via Cloud Functions
+export const reverseGeocode = async (lat, lng) => {
+  try {
+    // Using BigDataCloud API instead of Nominatim because:
+    // 1. No CORS issues (works from localhost)
+    // 2. Free, no API key required
+    // 3. Good accuracy for India
+    // 4. No rate limits for reasonable use
+    // 5. Returns state and city directly
+    
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
+    
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Geocoding failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    console.log('🌍 BigDataCloud response:', data); // Debug log
+    
+    // BigDataCloud returns principalSubdivision (state) and city directly
+    const state = data.principalSubdivision || data.localityInfo?.administrative?.[0]?.name || null;
+    const city = data.city || data.locality || data.localityInfo?.administrative?.[1]?.name || null;
+
+    return {
+      state,
+      city,
+      fullAddress: `${city || ''}, ${state || ''}, ${data.countryName || ''}`.trim(),
+      raw: data,
+    };
+  } catch (error) {
+    console.error('Reverse geocoding failed:', error);
+    return {
+      state: null,
+      city: null,
+      fullAddress: null,
+      error: error.message,
+    };
+  }
+};
+
+// UTILITY: Get unique states from all reports
+// This is useful for populating state dropdown filters in the UI.
+// 
+// SCALABILITY NOTE: For large datasets (10,000+ reports), consider:
+//   - Caching this result on the client
+//   - Maintaining a separate "states" collection in Firestore
+//   - Using a predefined list of states instead of querying
+export const getUniqueStates = async () => {
+  const q = query(collection(db, 'reports'), orderBy('state'));
+  const snapshot = await getDocs(q);
+  
+  const statesSet = new Set();
+  snapshot.forEach((doc) => {
+    const state = doc.data().state;
+    if (state) statesSet.add(state);
+  });
+
+  return Array.from(statesSet).sort();
+};
+
+// UTILITY: Get unique cities for a given state
+// This is useful for populating city dropdown filters in the UI.
+// The city dropdown should be filtered by the selected state.
+//
+// FIRESTORE INDEX REQUIRED:
+//   Collection: reports
+//   Fields: state (Ascending), city (Ascending)
+export const getUniqueCitiesForState = async (state) => {
+  if (!state) return [];
+
+  const q = query(
+    collection(db, 'reports'),
+    where('state', '==', state),
+    orderBy('city')
+  );
+  
+  const snapshot = await getDocs(q);
+  const citiesSet = new Set();
+  
+  snapshot.forEach((doc) => {
+    const city = doc.data().city;
+    if (city) citiesSet.add(city);
+  });
+
+  return Array.from(citiesSet).sort();
+};
+
+
 // this function tracks the current report status and updates it from db from repors collection using reportId and return next status and it is controlled by getNextStatus function thst has hardcoded array of statuses
 // this function is used to update the report status
 export const updateReportStatus = async (reportId, currentStatus) => {

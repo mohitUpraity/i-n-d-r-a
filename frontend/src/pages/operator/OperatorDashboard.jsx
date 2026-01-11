@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, User } from 'lucide-react';
+import { Shield, User, MapPin, Navigation } from 'lucide-react';
 import { logOut } from '../../lib/auth';
 import { auth } from '../../lib/firebase';
 import { subscribeToAllReports, updateReportStatus, getNextStatus } from '../../lib/reports';
+import { getIndianStates, getCitiesByState } from '../../lib/locations';
+import * as geofire from 'geofire-common';
 
 // Operator dashboard: real-time view of all citizen reports.
-// This intentionally keeps Firestore access simple and declarative so that it
-// can be moved into Cloud Functions later without rewriting the UI.
 export default function OperatorDashboard() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,15 +16,57 @@ export default function OperatorDashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterConfidence, setFilterConfidence] = useState('all');
+  
+  // Operator location and filtering state
+  const [operatorLocation, setOperatorLocation] = useState(null); 
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [filterState, setFilterState] = useState('all');
+  const [filterCity, setFilterCity] = useState('all');
+
+  // Load operator location on mount
+  useEffect(() => {
+    requestOperatorLocation();
+  }, []);
+
+  // ... (location request logic remains same)
+  const requestOperatorLocation = () => {
+    if (!navigator.geolocation) {
+      console.warn('Geolocation not supported');
+      return;
+    }
+
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setOperatorLocation({ lat: latitude, lng: longitude, city: null, state: null });
+        setLocationLoading(false);
+      },
+      (err) => {
+        // console.error('Failed to get operator location', err); // Reduce noise
+        setLocationLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  };
 
   useEffect(() => {
-    // Subscribe to *all* reports. Operators need a full picture to triage and
-    // coordinate the response. Firestore security rules (not query filters)
-    // should ensure that only operator/admin accounts can read this feed.
     const unsubscribe = subscribeToAllReports(
       (snap) => {
         const items = [];
-        snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
+        snap.forEach((doc) => {
+          const data = doc.data();
+          let distanceInKm = null;
+          
+          if (operatorLocation && data.lat && data.lng) {
+            distanceInKm = geofire.distanceBetween(
+              [data.lat, data.lng],
+              [operatorLocation.lat, operatorLocation.lng]
+            );
+          }
+          
+          items.push({ id: doc.id, ...data, distanceInKm });
+        });
         setReports(items);
         setLoading(false);
       },
@@ -36,7 +78,7 @@ export default function OperatorDashboard() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [operatorLocation]);
 
   const handleSignOut = async () => {
     setSignOutLoading(true);
@@ -54,7 +96,6 @@ export default function OperatorDashboard() {
       await updateReportStatus(reportId, currentStatus);
     } catch (err) {
       console.error('Failed to update status', err);
-      // We keep UX simple here for the hackathon; in production we might show a toast.
     }
   };
 
@@ -70,20 +111,16 @@ export default function OperatorDashboard() {
 
   const statusBadgeClass = (status) => {
     switch (status) {
-      case 'reviewed':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'working':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'resolved':
-        return 'bg-green-50 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'reviewed': return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'working': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'resolved': return 'bg-green-50 text-green-700 border-green-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   const currentUserEmail = auth.currentUser?.email || '';
 
-  // Derived stats for dashboard cards (using live report data)
+  // Derived stats
   const totalReports = reports.length;
   const activeReports = reports.filter((r) => (r.status || 'submitted') !== 'resolved').length;
   const workingReports = reports.filter((r) => (r.status || 'submitted') === 'working').length;
@@ -100,25 +137,63 @@ export default function OperatorDashboard() {
     );
   }).length;
 
-  const categories = Array.from(
-    new Set(
-      reports
-        .map((r) => r.category)
-        .filter(Boolean),
-    ),
-  );
+  const categories = Array.from(new Set(reports.map((r) => r.category).filter(Boolean)));
+
+  // --- LOCATION LOGIC ---
+  // 1. Get standardized states list
+  const statesList = getIndianStates(); // [{name, isoCode}, ...]
+  
+  // 2. Get cities based on selected state
+  // We handle 'all' and potential mismatch by finding the isoCode if name was passed previously
+  let currentCities = [];
+  if (filterState !== 'all') {
+     currentCities = getCitiesByState(filterState);
+  } else {
+     // If all states, optionally show all cities present in reports (unique list)
+     // But strictly speaking, it's better to force state selection for city list
+     // For now, let's just collect all unique cities from the reports if state is 'all'
+     currentCities = Array.from(new Set(reports.map(r => r.city).filter(Boolean))).sort().map(name => ({ name }));
+  }
 
   const filteredReports = reports.filter((r) => {
     const status = r.status || 'submitted';
     const category = r.category || 'uncategorized';
     const confidence = r.confidenceLevel || 'low';
     
+    // Normalize state/city check because we might have old reports with "Uttar Pradesh" and new ones with "UP"
+    const rState = r.state || '';
+    const rCity = r.city || '';
+
     const statusOk = filterStatus === 'all' || status === filterStatus;
     const categoryOk = filterCategory === 'all' || category === filterCategory;
     const confidenceOk = filterConfidence === 'all' || confidence === filterConfidence;
     
-    return statusOk && categoryOk && confidenceOk;
+    // State Filter Logic
+    let stateOk = true;
+    if (filterState !== 'all') {
+       // Filter matches if: 
+       // 1. Exact match (ISO code 'UP' == 'UP')
+       // 2. Name match (ISO code 'UP' matches State Name 'Uttar Pradesh' if found in dictionary)
+       const stateObj = statesList.find(s => s.isoCode === filterState);
+       const stateName = stateObj ? stateObj.name.toLowerCase() : '';
+       const filterCode = filterState.toLowerCase();
+       const reportState = rState.toLowerCase();
+
+       stateOk = reportState === filterCode || reportState === stateName || reportState.includes(stateName);
+    }
+
+    const cityOk = filterCity === 'all' || rCity.toLowerCase() === filterCity.toLowerCase();
+    
+    return statusOk && categoryOk && confidenceOk && stateOk && cityOk;
   });
+
+  // Helper function to get distance badge color
+  const getDistanceBadgeClass = (distanceInKm) => {
+    if (distanceInKm === null) return 'bg-gray-100 text-gray-600';
+    if (distanceInKm < 5) return 'bg-green-100 text-green-700';
+    if (distanceInKm < 15) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-gray-100 text-gray-600';
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -135,6 +210,24 @@ export default function OperatorDashboard() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Operator Location Status */}
+            {operatorLocation && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-900 rounded-lg text-xs text-green-100">
+                <MapPin className="w-3 h-3" />
+                <span>Location Active</span>
+              </div>
+            )}
+            
+            {!operatorLocation && !locationLoading && (
+              <button
+                onClick={requestOperatorLocation}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-yellow-900 hover:bg-yellow-800 rounded-lg text-xs text-yellow-100 transition-colors"
+              >
+                <Navigation className="w-3 h-3" />
+                <span>Enable Location</span>
+              </button>
+            )}
+            
             <div className="hidden sm:flex items-center text-xs text-gray-300">
               <User className="w-4 h-4 mr-1" />
               {currentUserEmail}
@@ -241,6 +334,42 @@ export default function OperatorDashboard() {
                 <option value="low">Low/Unverified</option>
               </select>
             </div>
+            
+            <div>
+              <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">State</label>
+              <select
+                value={filterState}
+                onChange={(e) => {
+                  setFilterState(e.target.value);
+                  setFilterCity('all'); // Reset city when state changes
+                }}
+                className="text-xs sm:text-sm border rounded px-2 py-1 bg-white max-w-[140px]"
+              >
+                <option value="all">All States</option>
+                {statesList.map((state) => (
+                  <option key={state.isoCode} value={state.isoCode}>
+                    {state.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-[11px] sm:text-xs font-medium text-gray-600 mb-1">City</label>
+              <select
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                disabled={filterState === 'all' && currentCities.length > 50} // Disable if too many (optional UX choice, usually ok to leave enabled if list is reasonable)
+                className="text-xs sm:text-sm border rounded px-2 py-1 bg-white max-w-[140px] disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="all">All Cities</option>
+                {currentCities.map((city) => (
+                  <option key={city.name} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="text-[11px] sm:text-xs text-gray-500">
@@ -266,6 +395,7 @@ export default function OperatorDashboard() {
                   <th className="px-4 py-3">Citizen</th>
                   <th className="px-4 py-3">Title</th>
                   <th className="px-4 py-3">Location</th>
+                  <th className="px-4 py-3">Distance</th>
                   <th className="px-4 py-3">Community Check</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Last updated</th>
@@ -299,6 +429,19 @@ export default function OperatorDashboard() {
                           >
                             View on Map
                           </a>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        {r.distanceInKm !== null ? (
+                          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getDistanceBadgeClass(r.distanceInKm)}`}>
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {r.distanceInKm < 1 
+                              ? `${(r.distanceInKm * 1000).toFixed(0)}m`
+                              : `${r.distanceInKm.toFixed(1)}km`
+                            }
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 align-top">

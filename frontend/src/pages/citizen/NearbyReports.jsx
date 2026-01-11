@@ -1,23 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Filter, Navigation, AlertTriangle, Shield, CheckCircle, Clock, ThumbsUp, ThumbsDown, HelpCircle, Activity } from 'lucide-react';
-import { getNearbyReports, voteOnReport } from '../../lib/reports';
-import { auth } from '../../lib/firebase';
+import { 
+  Filter, 
+  MapPin, 
+  Navigation, 
+  Loader, 
+  AlertTriangle,
+  Clock,
+  Shield,
+  Search,
+  CheckCircle, 
+  ThumbsUp, 
+  HelpCircle, 
+  Activity 
+} from 'lucide-react';
+import { db, auth } from '../../lib/firebase';
+import { reverseGeocode, getNearbyReports, getReportsByState, getReportsByCity, voteOnReport } from '../../lib/reports';
+import { getIndianStates } from '../../lib/locations';
 import { useNavigate } from 'react-router-dom';
 
 export default function NearbyReports() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [filterMode, setFilterMode] = useState('gps'); // 'gps', 'city', 'state'
+  const [radius, setRadius] = useState(5);
+  const [filterConfidence, setFilterConfidence] = useState('all'); // 'all', 'high', 'medium', 'low'
   const [reports, setReports] = useState([]);
-  const [hiddenCount, setHiddenCount] = useState(0); // Track reports hidden because they are own
-  const [error, setError] = useState(null); // Valid error object or string
-  const [radius, setRadius] = useState(5); // Default 5km
+  const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [error, setError] = useState(null);
   const [gpsCoords, setGpsCoords] = useState(null);
-
-  // Auto-scan on mount if we have permission, otherwise wait for user click
-  useEffect(() => {
-    // Optional: Auto-scan could go here, but manual is better for privacy feeling
-  }, []);
-
+  const [detectedLocation, setDetectedLocation] = useState(null);
+  const [hiddenCount, setHiddenCount] = useState(0);
+  
+  // UNIFIED SCAN FUNCTION (Simplified to 3 modes)
+  // Handles: GPS, My State (auto-detected), My City (auto-detected)
   const handleScan = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -30,22 +45,61 @@ export default function NearbyReports() {
     
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const { latitude, longitude } = pos.coords;
+        const { latitude, longitude, accuracy } = pos.coords;
+        
+        // Debug logging
+        console.log('📍 GPS Location:', { latitude, longitude, accuracy });
+        
+        // Warn if accuracy is poor (might be IP-based location)
+        if (accuracy > 1000) {
+          console.warn('⚠️ Low GPS accuracy detected. This might be IP-based location, not actual GPS.');
+        }
+        
         setGpsCoords({ lat: latitude, lng: longitude });
 
-        try {
-          const docs = await getNearbyReports(latitude, longitude, radius);
-          // Filter out reports created by the current user
-          const ownUid = auth.currentUser?.uid;
-          const filteredDocs = docs.filter(doc => doc.citizenId !== ownUid);
+        // For city mode, perform reverse geocoding first
+        if (filterMode === 'city') {
+          setGeocoding(true);
+          const location = await reverseGeocode(latitude, longitude);
           
-          setHiddenCount(docs.length - filteredDocs.length);
-          setReports(filteredDocs);
-        } catch (err) {
-          console.error("Failed to fetch nearby reports", err);
-          setError(err.message || "Failed to fetch reports");
-        } finally {
-          setLoading(false);
+          // Debug logging
+          console.log('🗺️ Reverse Geocoded:', location);
+          
+          // Map detected state name to ISO code used in DB
+          let stateCode = null;
+          if (location.state) {
+            const states = getIndianStates();
+            const matchingState = states.find(s => 
+              s.name.toLowerCase() === location.state.toLowerCase() || 
+              location.state.toLowerCase().includes(s.name.toLowerCase()) ||
+              s.name.toLowerCase().includes(location.state.toLowerCase())
+            );
+            if (matchingState) {
+              stateCode = matchingState.isoCode;
+            }
+          }
+
+          // Create a search location object with the correct DB codes
+          const searchLocation = {
+            ...location,
+            state: stateCode || location.state // Use code if found, else fallback to name
+          };
+
+          console.log('🗺️ Mapped Location:', searchLocation);
+          setDetectedLocation(location); // Show full user-friendly name in UI
+          setGeocoding(false);
+
+          // Check if city detection was successful
+          if (!searchLocation.city) {
+            setError('Could not detect your city. Please try GPS mode.');
+            setLoading(false);
+            return;
+          }
+
+          await fetchReports(latitude, longitude, searchLocation);
+        } else {
+          // GPS mode - no geocoding needed
+          await fetchReports(latitude, longitude, null);
         }
       },
       (err) => {
@@ -60,16 +114,83 @@ export default function NearbyReports() {
         }
         setError(msg);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      { 
+        enableHighAccuracy: true, 
+        timeout: 30000, // Increased to 30 seconds
+        maximumAge: 0 // Force fresh GPS reading, don't use cached
+      }
     );
   };
 
-  // Re-scan when radius changes if we already have coords
+  // FETCH REPORTS BASED ON FILTER MODE (Simplified)
+  const fetchReports = async (lat, lng, location) => {
+    try {
+      let docs = [];
+
+      // Execute the appropriate query based on filter mode
+      switch (filterMode) {
+        case 'gps':
+          docs = await getNearbyReports(lat, lng, radius);
+          break;
+        
+        case 'state':
+          docs = await getReportsByState(location.state, lat, lng);
+          break;
+        
+        case 'city':
+          docs = await getReportsByCity(location.city, location.state, lat, lng);
+          break;
+        
+        default:
+          throw new Error('Invalid filter mode');
+      }
+
+      // Filter out reports created by the current user
+      const ownUid = auth.currentUser?.uid;
+      let filteredDocs = docs.filter(doc => doc.citizenId !== ownUid);
+      
+      // Apply confidence filter
+      if (filterConfidence !== 'all') {
+        filteredDocs = filteredDocs.filter(doc => 
+          (doc.confidenceLevel || 'low') === filterConfidence
+        );
+      }
+      
+      setHiddenCount(docs.length - filteredDocs.length);
+      setReports(filteredDocs);
+    } catch (err) {
+      console.error("Failed to fetch reports", err);
+      setError(err.message || "Failed to fetch reports");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Re-scan when radius changes (GPS mode only)
   useEffect(() => {
-    if (gpsCoords) {
+    if (gpsCoords && filterMode === 'gps') {
       handleScan();
     }
   }, [radius]);
+
+  // Helper function to get filter mode display name
+  const getFilterModeLabel = () => {
+    switch (filterMode) {
+      case 'gps': return 'GPS Radius';
+      case 'state': return 'My State';
+      case 'city': return 'My City';
+      default: return 'Unknown';
+    }
+  };
+
+  // Helper to get confidence badge
+  const getConfidenceBadge = (level) => {
+    switch(level) {
+      case 'high': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">High</span>;
+      case 'medium': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Medium</span>;
+      default: return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">Low</span>;
+    }
+  };
 
   const handleVote = async (e, reportId, voteType) => {
     e.stopPropagation(); // Prevent card click
@@ -122,27 +243,19 @@ export default function NearbyReports() {
     return status;
   };
 
-  const getConfidenceBadge = (level) => {
-    switch(level) {
-      case 'high': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">High Confidence</span>;
-      case 'medium': return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">Medium Confidence</span>;
-      default: return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">Low Confidence</span>;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-4 mb-4">
+      {/* Header - Made non-sticky and more compact */}
+      <header className="bg-white border-b shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-linear-to-br from-blue-600 to-indigo-700 p-2 rounded-lg shadow-sm">
-                <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                <MapPin className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">Nearby Activity</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Community-verified reports around you</p>
+                <h1 className="text-xl font-bold text-gray-900">Nearby Activity</h1>
+                <p className="text-xs text-gray-500">Community-verified reports</p>
               </div>
             </div>
             
@@ -150,53 +263,130 @@ export default function NearbyReports() {
               onClick={() => navigate('/citizen/home')}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              ← <span className="hidden sm:inline">Back to Home</span><span className="sm:inline md:hidden">Back</span>
+              ← Back
             </button>
-          </div>
-
-          <div className="mb-4 bg-blue-50 border border-blue-100 rounded-lg p-3 flex gap-3 text-sm text-blue-800">
-             <Shield className="w-5 h-5 shrink-0 text-blue-600" />
-             <p>
-               <strong>Ethical Note:</strong> Your verifications help authorities prioritize resources. This tool does not replace official emergency services. In immediate danger, always call 112.
-             </p>
-          </div>
-
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row gap-3">
-             <button
-               onClick={handleScan}
-               disabled={loading}
-               className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-70"
-             >
-               {loading ? (
-                 <span className="animate-spin">⌛</span> 
-               ) : (
-                 <Navigation className="w-4 h-4" /> 
-               )}
-               {loading ? 'Scanning Area...' : 'Scan My Area'}
-             </button>
-
-             <div className="flex bg-gray-100 rounded-lg p-1">
-               {[1, 5, 10, 25].map((km) => (
-                 <button
-                   key={km}
-                   onClick={() => setRadius(km)}
-                   className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                     radius === km 
-                       ? 'bg-white text-gray-900 shadow-sm' 
-                       : 'text-gray-500 hover:text-gray-700'
-                   }`}
-                 >
-                   {km}km
-                 </button>
-               ))}
-             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        {/* Ethical Note - More compact */}
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2 text-xs text-blue-800">
+           <Shield className="w-4 h-4 shrink-0 text-blue-600 mt-0.5" />
+           <p>
+             <strong>Note:</strong> Your verifications help authorities prioritize resources. In immediate danger, always call 112.
+           </p>
+        </div>
+
+        {/* Filter Mode Selector - Simplified and more compact */}
+        <div className="mb-4 bg-white border-2 border-indigo-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-indigo-600" />
+              <span className="text-sm font-semibold text-gray-900">Filter Mode</span>
+            </div>
+            {geocoding && (
+              <div className="flex items-center gap-1 text-xs text-indigo-600">
+                <Loader className="w-3 h-3 animate-spin" />
+                <span>Detecting...</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setFilterMode('gps')}
+              className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+                filterMode === 'gps'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-gray-50 text-gray-700 hover:bg-indigo-50 border border-gray-200'
+              }`}
+            >
+              <div className="text-base mb-1">📍</div>
+              <div>GPS Radius</div>
+            </button>
+            
+            <button
+              onClick={() => setFilterMode('city')}
+              className={`px-3 py-2 text-xs font-medium rounded-lg transition-all ${
+                filterMode === 'city'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-gray-50 text-gray-700 hover:bg-indigo-50 border border-gray-200'
+              }`}
+            >
+              <div className="text-base mb-1">🏙️</div>
+              <div>My City</div>
+            </button>
+          </div>
+
+          {/* Show detected location - More compact */}
+          {detectedLocation && (filterMode === 'state' || filterMode === 'city') && (
+            <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-2 text-xs">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3 h-3 text-green-600 shrink-0" />
+                <div>
+                  <span className="font-semibold text-gray-900">
+                    {filterMode === 'city' && detectedLocation.city && `${detectedLocation.city}, `}
+                    {detectedLocation.state || 'Unknown'}
+                  </span>
+                  <span className="text-gray-500 ml-1">(auto-detected)</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Confidence Filter - Inline with scan button */}
+        <div className="mb-4 flex flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-2 flex-1">
+            <label className="text-xs font-medium text-gray-700 whitespace-nowrap">Confidence:</label>
+            <select
+              value={filterConfidence}
+              onChange={(e) => setFilterConfidence(e.target.value)}
+              className="flex-1 px-2 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="all">All Levels</option>
+              <option value="high">High Only</option>
+              <option value="medium">Medium Only</option>
+              <option value="low">Low Only</option>
+            </select>
+          </div>
+
+          {/* Radius selector - only show for GPS mode */}
+          {filterMode === 'gps' && (
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              {[1, 5, 10, 25].map((km) => (
+                <button
+                  key={km}
+                  onClick={() => setRadius(km)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    radius === km 
+                      ? 'bg-white text-indigo-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {km}km
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Scan Button - Full width */}
+        <button
+          onClick={handleScan}
+          disabled={loading || geocoding}
+          className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all mb-6"
+        >
+          {loading || geocoding ? (
+            <Loader className="w-5 h-5 animate-spin" /> 
+          ) : (
+            <Navigation className="w-5 h-5" /> 
+          )}
+          {loading ? 'Scanning...' : geocoding ? 'Detecting Location...' : 'Scan My Area'}
+        </button>
         
         {/* How Verification Works - Guide */}
         {!loading && reports.length === 0 && !error && (

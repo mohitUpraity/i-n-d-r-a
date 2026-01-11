@@ -3,7 +3,7 @@ import { MapPin, AlertTriangle, Check, Loader, Navigation } from 'lucide-react';
 import { db, auth } from '../../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getIndianStates, getCitiesByState, getLocalities } from '../../lib/locations';
-import { createCitizenReport } from '../../lib/reports';
+import { createCitizenReport, reverseGeocode } from '../../lib/reports';
 
 export default function CitizenReport() {
   const [incidentType, setIncidentType] = useState('');
@@ -20,6 +20,8 @@ export default function CitizenReport() {
   
   // GPS & Status
   const [gpsLocation, setGpsLocation] = useState(null); // { lat, lng }
+  const [autoDetected, setAutoDetected] = useState(false); // Track if state/city were auto-detected
+  const [isManualMode, setIsManualMode] = useState(false); // Track if user opted for manual entry
   const [loading, setLoading] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -85,7 +87,7 @@ export default function CitizenReport() {
     }
   }, [selectedCity]);
 
-  const handleDetectLocation = () => {
+  const handleDetectLocation = async () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
       return;
@@ -94,11 +96,49 @@ export default function CitizenReport() {
     setError('');
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setGpsLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        setGpsLocation({ lat, lng });
+        
+        // Auto-detect state and city using reverse geocoding
+        try {
+          const location = await reverseGeocode(lat, lng);
+          console.log('🗺️ Auto-detected location:', location);
+          
+          // Auto-fill state if detected
+          if (location.state) {
+            // Find matching state in our list
+            const matchingState = states.find(s => 
+              s.name.toLowerCase() === location.state.toLowerCase() ||
+              location.state.toLowerCase().includes(s.name.toLowerCase())
+            );
+            
+            if (matchingState) {
+              setSelectedState(matchingState.isoCode);
+              setAutoDetected(true); // Mark as auto-detected
+              
+              // Wait for cities to load, then auto-fill city
+              setTimeout(() => {
+                if (location.city) {
+                  const citiesForState = getCitiesByState(matchingState.isoCode);
+                  const matchingCity = citiesForState.find(c => 
+                    c.name.toLowerCase() === location.city.toLowerCase()
+                  );
+                  
+                  if (matchingCity) {
+                    setSelectedCity(matchingCity.name);
+                  }
+                }
+              }, 100);
+            }
+          }
+        } catch (err) {
+          console.error('Auto-detection failed:', err);
+          // Continue anyway - GPS is captured, user can manually select
+        }
+        
         setDetectingLocation(false);
       },
       (err) => {
@@ -113,7 +153,7 @@ export default function CitizenReport() {
         setError(msg);
         setDetectingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
   };
 
@@ -180,6 +220,8 @@ export default function CitizenReport() {
     setSelectedState('');
     setSelectedCity('');
     setSelectedLocality('');
+    setAutoDetected(false); // Reset auto-detected flag
+    setIsManualMode(false); // Reset manual mode
     setSubmitted(false);
     setError('');
   };
@@ -438,32 +480,81 @@ export default function CitizenReport() {
               Where are you?
             </label>
 
-            {/* Region Selection (MANDATORY) */}
-            <div className="space-y-3 mb-4">
-              <p className="text-sm text-gray-600 font-medium">1. Select Region <span className="text-red-500">*</span></p>
-              <select
-                value={selectedState}
-                onChange={(e) => setSelectedState(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select State</option>
-                {states.map((s) => (
-                  <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
-                ))}
-              </select>
+              {/* Region Selection (MANDATORY) */}
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-600 font-medium">1. Select Region <span className="text-red-500">*</span></p>
+                  
+                  {/* Allow switching to manual mode if not already */}
+                  {!isManualMode && !autoDetected && (
+                    <button
+                      type="button"
+                      onClick={() => setIsManualMode(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Enter manually
+                    </button>
+                  )}
+                </div>
+                
+                {/* Show lock/disabled message */}
+                {(!isManualMode && !gpsLocation) && (
+                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+                    ℹ️ Please use <strong>Step 2: Attach GPS Location</strong> to auto-fill these fields.
+                  </div>
+                )}
 
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                disabled={!selectedState}
-                className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100 disabled:text-gray-400 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select City</option>
-                {cities.map((c) => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+                {/* Show lock message if auto-detected */}
+                {autoDetected && selectedState && (
+                  <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+                    <div className="text-green-600 text-lg">✓</div>
+                    <div className="text-xs text-green-800">
+                      <strong>Location Auto-Selected:</strong> Matches your GPS for accuracy.
+                    </div>
+                  </div>
+                )}
+                
+                <select
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                  disabled={autoDetected || (!isManualMode && !gpsLocation)} 
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select State</option>
+                  {states.map((s) => (
+                    <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  disabled={!selectedState || autoDetected || (!isManualMode && !gpsLocation)}
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-100 disabled:text-gray-500 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select City</option>
+                  {cities.map((c) => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+                
+                {/* Reset button if user wants to manually select */}
+                {autoDetected && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGpsLocation(null);
+                      setSelectedState('');
+                      setSelectedCity('');
+                      setAutoDetected(false); // Reset auto-detected flag
+                      setIsManualMode(true); // Enable manual mode
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Reset and select manually
+                  </button>
+                )}
+              </div>
             
             <div className="border-t border-gray-200 my-4"></div>
 
